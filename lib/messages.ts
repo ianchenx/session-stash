@@ -9,6 +9,7 @@ import type {
 
 export type UiMsg =
   | { type: "STATUS" }
+  | { type: "GET_CF_CONFIG" }
   | { type: "SET_CF_CONFIG"; cfg: CfConfig }
   | { type: "INIT_META"; password: string }
   | { type: "UNLOCK"; password: string }
@@ -62,6 +63,7 @@ export type UiResp =
     }
   | { ok: true; kind: "conflict"; info: ConflictInfo }
   | { ok: true; kind: "lock-policy"; policy: LockPolicy }
+  | { ok: true; kind: "cf-config"; config: CfConfig | null }
 
 export type { ConflictInfo, ConflictResolution, HealthStatus } from "./types"
 export type { LockPolicy } from "./session-lock"

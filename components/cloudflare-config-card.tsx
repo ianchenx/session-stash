@@ -1,8 +1,9 @@
-import { ExternalLink } from "lucide-react"
-import { useEffect, useState } from "react"
+import { ExternalLink, RotateCcw } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { respError, send } from "~lib/messaging"
+import type { CfConfig } from "~lib/types"
 import { Button } from "~components/ui/button"
 import {
   Card,
@@ -20,33 +21,54 @@ type Props = {
   onSaved: () => void
 }
 
+const EMPTY: CfConfig = { accountId: "", namespaceId: "", apiToken: "" }
+
 export function CloudflareConfigCard({ configured, onSaved }: Props) {
-  const [accountId, setAccountId] = useState("")
-  const [namespaceId, setNamespaceId] = useState("")
-  const [apiToken, setApiToken] = useState("")
+  const [saved, setSaved] = useState<CfConfig | null>(null)
+  const [form, setForm] = useState<CfConfig>(EMPTY)
+  const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
 
+  const loadSaved = useCallback(async () => {
+    setLoading(true)
+    const response = await send({ type: "GET_CF_CONFIG" })
+    setLoading(false)
+    if (response.ok && "kind" in response && response.kind === "cf-config") {
+      const config = response.config
+      setSaved(config)
+      setForm(config ?? EMPTY)
+      return
+    }
+    setSaved(null)
+    setForm(EMPTY)
+  }, [])
+
   useEffect(() => {
-    setAccountId("")
-    setNamespaceId("")
-    setApiToken("")
-  }, [configured])
+    void loadSaved()
+  }, [loadSaved, configured])
+
+  const isDirty =
+    form.accountId !== (saved?.accountId ?? "") ||
+    form.namespaceId !== (saved?.namespaceId ?? "") ||
+    form.apiToken !== (saved?.apiToken ?? "")
+
+  function update<K extends keyof CfConfig>(key: K, value: CfConfig[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
 
   async function handleSave() {
-    if (!accountId.trim() || !namespaceId.trim() || !apiToken.trim()) {
+    const trimmed: CfConfig = {
+      accountId: form.accountId.trim(),
+      namespaceId: form.namespaceId.trim(),
+      apiToken: form.apiToken.trim()
+    }
+    if (!trimmed.accountId || !trimmed.namespaceId || !trimmed.apiToken) {
       toast.error("All three fields are required.")
       return
     }
 
     setBusy(true)
-    const response = await send({
-      type: "SET_CF_CONFIG",
-      cfg: {
-        accountId: accountId.trim(),
-        namespaceId: namespaceId.trim(),
-        apiToken: apiToken.trim()
-      }
-    })
+    const response = await send({ type: "SET_CF_CONFIG", cfg: trimmed })
     setBusy(false)
 
     const error = respError(response)
@@ -56,8 +78,13 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
     }
 
     toast.success("Cloudflare config saved.")
-    setApiToken("")
+    setSaved(trimmed)
+    setForm(trimmed)
     onSaved()
+  }
+
+  function handleReset() {
+    setForm(saved ?? EMPTY)
   }
 
   return (
@@ -82,8 +109,9 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
             <PasswordInput
               id="cf-account-id"
               placeholder="e.g. 5a7f8d0c1b3e4a6d8f0c1b3e4a6d8f0c"
-              value={accountId}
-              onChange={(event) => setAccountId(event.target.value)}
+              value={form.accountId}
+              onChange={(event) => update("accountId", event.target.value)}
+              disabled={loading}
             />
             <FieldDescription>
               Find it in your Cloudflare dashboard URL or Account Home sidebar.
@@ -95,8 +123,9 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
             <PasswordInput
               id="cf-namespace-id"
               placeholder="KV → your namespace → API"
-              value={namespaceId}
-              onChange={(event) => setNamespaceId(event.target.value)}
+              value={form.namespaceId}
+              onChange={(event) => update("namespaceId", event.target.value)}
+              disabled={loading}
             />
             <FieldDescription>
               Create a dedicated KV namespace for session-stash.
@@ -108,25 +137,41 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
             <PasswordInput
               id="cf-api-token"
               placeholder="Scoped token with KV Read + Write"
-              value={apiToken}
-              onChange={(event) => setApiToken(event.target.value)}
+              value={form.apiToken}
+              onChange={(event) => update("apiToken", event.target.value)}
+              disabled={loading}
             />
             <FieldDescription>
               Use <strong>My Profile → API Tokens</strong> to create a token limited
-              to <em>Workers KV Storage: Edit</em> on that namespace only.
+              to <em>Workers KV Storage: Edit</em> on that namespace only. Click the
+              eye icon above to reveal the value you have saved.
             </FieldDescription>
           </Field>
         </FieldGroup>
       </CardContent>
       <CardFooter className="justify-between">
         <p className="text-xs text-muted-foreground">
-          {configured
-            ? "A config is already saved. Fill in and Save to replace it."
-            : "No config yet — fill in all three fields."}
+          {loading
+            ? "Loading saved config…"
+            : configured
+              ? isDirty
+                ? "Unsaved changes."
+                : "Matches the saved configuration."
+              : "No config saved yet."}
         </p>
-        <Button onClick={handleSave} disabled={busy}>
-          {configured ? "Replace" : "Save"}
-        </Button>
+        <div className="flex gap-2">
+          {configured && isDirty && (
+            <Button variant="ghost" onClick={handleReset} disabled={busy}>
+              <RotateCcw className="mr-1 h-4 w-4" />
+              Revert
+            </Button>
+          )}
+          <Button
+            onClick={handleSave}
+            disabled={busy || loading || !isDirty}>
+            {configured ? "Save changes" : "Save"}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

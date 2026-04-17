@@ -22,7 +22,7 @@ export async function deriveMasterKey(
     },
     baseKey,
     { name: "AES-GCM", length: 256 },
-    false,
+    true,
     ["encrypt", "decrypt"]
   )
 }

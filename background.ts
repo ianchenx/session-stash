@@ -179,6 +179,11 @@ async function handle(msg: UiMsg): Promise<UiResp> {
       }
     }
 
+    case "GET_CF_CONFIG": {
+      const config = await getCfConfig()
+      return { ok: true, kind: "cf-config", config }
+    }
+
     case "SET_CF_CONFIG": {
       await setCfConfig(msg.cfg)
       return { ok: true }
