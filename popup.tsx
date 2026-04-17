@@ -1,284 +1,422 @@
-import { useEffect, useState } from "react"
-
-import type { UiMsg, UiResp } from "./lib/messages"
-import type { IndexEntry } from "./lib/types"
-import { getETLDPlusOne } from "./lib/domain"
+import {
+  ArrowUpFromLine,
+  CheckCircle2,
+  Lock,
+  PanelRightOpen,
+  Plus,
+  RefreshCcw,
+  Settings,
+  ShieldCheck
+} from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
 
 import "./style.css"
 
-async function send(msg: UiMsg): Promise<UiResp> {
-  return (await chrome.runtime.sendMessage(msg)) as UiResp
+import { useSessionPanel } from "~lib/use-session-panel"
+import { Badge } from "~components/ui/badge"
+import { Button } from "~components/ui/button"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle
+} from "~components/ui/empty"
+import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
+import { ScrollArea } from "~components/ui/scroll-area"
+import { Separator } from "~components/ui/separator"
+import { Toaster } from "~components/ui/sonner"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "~components/ui/tooltip"
+import { ConflictDialog } from "~components/panel/conflict-dialog"
+import { SaveNewDialog } from "~components/panel/save-new-dialog"
+import { PasswordInput } from "~components/password-input"
+
+const POPUP_WIDTH = 360
+
+function openSettings() {
+  chrome.runtime.openOptionsPage()
 }
 
-function IndexPopup() {
-  const [tab, setTab] = useState<chrome.tabs.Tab | null>(null)
-  const [domain, setDomain] = useState<string | null>(null)
-  const [accounts, setAccounts] = useState<IndexEntry[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [status, setStatus] = useState<{
-    unlocked: boolean
-    cfConfigured: boolean
-    initialized: boolean
-  } | null>(null)
-  const [newLabel, setNewLabel] = useState("")
-  const [error, setError] = useState("")
-  const [busy, setBusy] = useState(false)
-
-  async function refresh() {
-    setError("")
-    const [currentTab] = await chrome.tabs.query({
+async function openFullPanel() {
+  try {
+    const [current] = await chrome.tabs.query({
       active: true,
       currentWindow: true
     })
-    setTab(currentTab ?? null)
-    const currentDomain = currentTab?.url ? getETLDPlusOne(currentTab.url) : null
-    setDomain(currentDomain)
-
-    const statusResponse = await send({ type: "STATUS" })
-    if ("kind" in statusResponse && statusResponse.kind === "status") {
-      setStatus({
-        unlocked: statusResponse.unlocked,
-        cfConfigured: statusResponse.cfConfigured,
-        initialized: statusResponse.initialized
-      })
+    if (current?.windowId !== undefined) {
+      await chrome.sidePanel.open({ windowId: current.windowId })
+      window.close()
     }
-
-    if (
-      currentDomain &&
-      "kind" in statusResponse &&
-      statusResponse.kind === "status" &&
-      statusResponse.unlocked
-    ) {
-      const response = await send({ type: "LIST_ACCOUNTS", domain: currentDomain })
-      if ("kind" in response && response.kind === "accounts") {
-        setAccounts(response.entries)
-        setActiveId(response.activeId)
-      } else if ("error" in response) {
-        setError(response.error)
-      }
-    }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
   }
+}
 
-  useEffect(() => {
-    refresh()
-  }, [])
+function Popup() {
+  const panel = useSessionPanel()
+  const [saveOpen, setSaveOpen] = useState(false)
 
-  async function doSave() {
-    if (!tab?.id || !domain || !newLabel.trim()) {
-      return
-    }
-
-    setBusy(true)
-    setError("")
-    const response = await send({
-      type: "SAVE_NEW",
-      domain,
-      label: newLabel.trim(),
-      tabId: tab.id
-    })
-    setBusy(false)
-    if ("error" in response) {
-      setError(response.error)
-    } else {
-      setNewLabel("")
-      await refresh()
-    }
-  }
-
-  async function doSwitch(toId: string) {
-    if (!tab?.id || !domain) {
-      return
-    }
-
-    setBusy(true)
-    setError("")
-    const response = await send({
-      type: "SWITCH",
-      domain,
-      fromId: activeId,
-      toId,
-      tabId: tab.id
-    })
-
-    if ("kind" in response && response.kind === "conflict") {
-      const choice = prompt(
-        `Remote version ${response.info.remoteVersion} is newer than local ${response.info.localVersion} for account ${response.info.accountId}.\nType: overwrite / discard / cancel`,
-        "cancel"
-      ) as "overwrite" | "discard" | "cancel" | null
-
-      if (choice && choice !== "cancel") {
-        const retry = await send({
-          type: "SWITCH",
-          domain,
-          fromId: activeId,
-          toId,
-          tabId: tab.id,
-          localFromVersion: response.info.localVersion,
-          resolution: choice
-        })
-        if ("error" in retry) {
-          setError(retry.error)
-        }
-      }
-    } else if ("error" in response) {
-      setError(response.error)
-    }
-
-    setBusy(false)
-    await refresh()
-  }
-
-  async function doDelete(id: string) {
-    if (!tab?.id) {
-      return
-    }
-    if (!confirm("Delete this account from cloud and local?")) {
-      return
-    }
-
-    setBusy(true)
-    setError("")
-    const response = await send({ type: "DELETE", accountId: id, tabId: tab.id })
-    setBusy(false)
-    if ("error" in response) {
-      setError(response.error)
-    } else {
-      await refresh()
-    }
-  }
-
-  async function doOverwrite(id: string) {
-    if (!tab?.id) {
-      return
-    }
-    if (!confirm("Overwrite the cloud version with current session?")) {
-      return
-    }
-
-    setBusy(true)
-    setError("")
-    const response = await send({ type: "OVERWRITE", accountId: id, tabId: tab.id })
-    setBusy(false)
-    if ("error" in response) {
-      setError(response.error)
-    } else {
-      await refresh()
-    }
-  }
-
-  function openOptions() {
-    chrome.runtime.openOptionsPage()
-  }
-
-  const needsSetup =
-    !status?.cfConfigured || !status?.initialized || !status?.unlocked
+  const { status, tab, conflict, dismissConflict } = panel
 
   return (
-    <div style={{ fontFamily: "system-ui", padding: 14, width: 320 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-        <strong>Session Stash</strong>
-        <button onClick={openOptions} style={{ fontSize: 12 }}>
-          Settings
-        </button>
-      </div>
+    <div
+      className="flex min-h-[420px] flex-col bg-background text-foreground"
+      style={{ width: POPUP_WIDTH }}>
+      <Header panel={panel} />
 
-      {needsSetup && (
-        <div style={{ marginTop: 12, color: "#b91c1c" }}>
-          {!status?.cfConfigured && <p>- Configure Cloudflare in Settings</p>}
-          {status?.cfConfigured && !status.initialized && (
-            <p>- Initialize master password in Settings</p>
-          )}
-          {status?.initialized && !status.unlocked && (
-            <p>- Unlock with master password in Settings</p>
-          )}
-        </div>
+      {!status ? (
+        <div className="flex-1" />
+      ) : !status.cfConfigured || !status.initialized ? (
+        <SetupGate
+          needsCf={!status.cfConfigured}
+          needsInit={status.cfConfigured && !status.initialized}
+        />
+      ) : !status.unlocked ? (
+        <UnlockInline onUnlock={panel.unlock} />
+      ) : (
+        <Body panel={panel} onOpenSave={() => setSaveOpen(true)} />
       )}
 
-      {!needsSetup && !domain && (
-        <p style={{ marginTop: 12, color: "#64748b" }}>
-          Unsupported tab (localhost/IP/extension page).
-        </p>
-      )}
+      <SaveNewDialog
+        open={saveOpen}
+        domain={tab.domain}
+        onClose={() => setSaveOpen(false)}
+        onSave={async (label) => {
+          await panel.saveCurrentAsNew(label)
+          toast.success(`Saved "${label}".`)
+        }}
+      />
 
-      {!needsSetup && domain && (
-        <>
-          <p style={{ color: "#64748b", fontSize: 12, marginTop: 10 }}>
-            Domain: {domain}
-          </p>
+      <ConflictDialog conflict={conflict} onCancel={dismissConflict} />
 
-          <div style={{ marginTop: 8 }}>
-            {accounts.length === 0 && (
-              <p style={{ color: "#64748b" }}>No saved accounts for this domain.</p>
-            )}
-            {accounts.map((account) => (
-              <div
-                key={account.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "6px 8px",
-                  borderRadius: 6,
-                  marginBottom: 4,
-                  background: account.id === activeId ? "#dbeafe" : "#f1f5f9"
-                }}>
-                <span style={{ flex: 1 }}>
-                  {account.label}
-                  {account.id === activeId && " (active)"}
-                </span>
-                {account.id !== activeId && (
-                  <button
-                    disabled={busy}
-                    onClick={() => doSwitch(account.id)}
-                    style={{ marginLeft: 4 }}>
-                    Switch
-                  </button>
-                )}
-                {account.id === activeId && (
-                  <button
-                    disabled={busy}
-                    onClick={() => doOverwrite(account.id)}
-                    style={{ marginLeft: 4 }}>
-                    Push
-                  </button>
-                )}
-                <button
-                  disabled={busy}
-                  onClick={() => doDelete(account.id)}
-                  style={{ marginLeft: 4 }}>
-                  x
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <hr style={{ margin: "12px 0" }} />
-
-          <div>
-            <input
-              placeholder="New account label"
-              value={newLabel}
-              onChange={(event) => setNewLabel(event.target.value)}
-              style={{ width: "60%", marginRight: 6 }}
-            />
-            <button disabled={busy || !newLabel.trim()} onClick={doSave}>
-              Save current
-            </button>
-          </div>
-        </>
-      )}
-
-      {error && (
-        <p style={{ color: "#b91c1c", marginTop: 10, fontSize: 12 }}>
-          Error: {error}
-        </p>
-      )}
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   )
 }
 
-export default IndexPopup
+function Header({ panel }: { panel: ReturnType<typeof useSessionPanel> }) {
+  const { status } = panel
+  return (
+    <header className="flex items-center gap-2 border-b px-3 py-2.5">
+      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+        <ShieldCheck className="h-3.5 w-3.5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold leading-none">
+          Session Stash
+        </p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {status?.unlocked ? "Unlocked" : status?.initialized ? "Locked" : "Not set up"}
+        </p>
+      </div>
+      <TooltipProvider delayDuration={200}>
+        {status?.unlocked && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={async () => {
+                  try {
+                    await panel.lock()
+                    toast.success("Locked.")
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error ? error.message : String(error)
+                    )
+                  }
+                }}>
+                <Lock className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Lock now</TooltipContent>
+          </Tooltip>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={() => void openFullPanel()}>
+              <PanelRightOpen className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Open side panel</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={openSettings}>
+              <Settings className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Settings</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </header>
+  )
+}
+
+function SetupGate({
+  needsCf,
+  needsInit
+}: {
+  needsCf: boolean
+  needsInit: boolean
+}) {
+  return (
+    <div className="flex flex-1 items-start justify-center p-4">
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Settings className="h-5 w-5" />
+          </EmptyMedia>
+          <EmptyTitle>{needsCf ? "Configure Cloudflare" : "Initialize vault"}</EmptyTitle>
+          <EmptyDescription>
+            {needsCf
+              ? "Paste your Cloudflare Account ID, namespace, and API token in settings to start."
+              : "Choose a master password in settings. It encrypts every session locally."}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button onClick={openSettings}>Open settings</Button>
+        </EmptyContent>
+      </Empty>
+    </div>
+  )
+}
+
+function UnlockInline({
+  onUnlock
+}: {
+  onUnlock: (password: string) => Promise<void>
+}) {
+  const [password, setPassword] = useState("")
+  const [busy, setBusy] = useState(false)
+
+  async function submit() {
+    if (!password) {
+      toast.error("Enter your master password.")
+      return
+    }
+    setBusy(true)
+    try {
+      await onUnlock(password)
+      setPassword("")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-4 p-4">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <Lock className="h-6 w-6 text-muted-foreground" />
+        <p className="text-sm font-medium">Vault is locked</p>
+        <p className="text-xs text-muted-foreground">
+          Enter your master password to continue.
+        </p>
+      </div>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="popup-unlock">Master password</FieldLabel>
+          <PasswordInput
+            id="popup-unlock"
+            autoFocus
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                void submit()
+              }
+            }}
+          />
+        </Field>
+      </FieldGroup>
+      <Button disabled={busy} onClick={submit}>
+        Unlock
+      </Button>
+    </div>
+  )
+}
+
+function Body({
+  panel,
+  onOpenSave
+}: {
+  panel: ReturnType<typeof useSessionPanel>
+  onOpenSave: () => void
+}) {
+  const {
+    tab,
+    selectedDomain,
+    selectedAccounts,
+    activeIdForSelected,
+    doSwitch,
+    pushCurrent
+  } = panel
+
+  const showingCurrent = tab.domain && selectedDomain === tab.domain
+  const accounts = showingCurrent ? selectedAccounts : []
+
+  if (!tab.domain) {
+    return (
+      <div className="flex flex-1 items-start justify-center p-4">
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>Unsupported tab</EmptyTitle>
+            <EmptyDescription>
+              The active tab is not an HTTPS website. Open the side panel to manage
+              all saved sites.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={() => void openFullPanel()}>Open side panel</Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <div className="min-w-0">
+          <p className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+            Current site
+          </p>
+          <p className="truncate text-sm font-medium">{tab.domain}</p>
+        </div>
+        <Badge variant="secondary">
+          {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
+        </Badge>
+      </div>
+
+      <Separator />
+
+      <ScrollArea className="max-h-72 flex-1">
+        {accounts.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              No accounts saved for this site yet.
+            </p>
+            <Button variant="outline" size="sm" onClick={onOpenSave}>
+              <Plus className="mr-1 h-3.5 w-3.5" />
+              Save current session
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5 p-2">
+            {accounts.map((account) => {
+              const active = account.id === activeIdForSelected
+              return (
+                <div
+                  key={account.id}
+                  className={`flex items-center gap-2 rounded-md border p-2 ${
+                    active
+                      ? "border-primary/40 bg-primary/5"
+                      : "hover:bg-muted/40"
+                  }`}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-medium">
+                        {account.label}
+                      </p>
+                      {active && (
+                        <Badge className="h-4 bg-emerald-500 px-1.5 text-[10px] text-white hover:bg-emerald-500/90">
+                          <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" />
+                          Active
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      v{account.version}
+                    </p>
+                  </div>
+                  {active ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={async () => {
+                        try {
+                          await pushCurrent(account.id)
+                          toast.success("Pushed.")
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error
+                              ? error.message
+                              : String(error)
+                          )
+                        }
+                      }}>
+                      <ArrowUpFromLine className="mr-1 h-3 w-3" />
+                      Push
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={async () => {
+                        try {
+                          await doSwitch(account.id)
+                          toast.success(`Switched to ${account.label}.`)
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error
+                              ? error.message
+                              : String(error)
+                          )
+                        }
+                      }}>
+                      <RefreshCcw className="mr-1 h-3 w-3" />
+                      Switch
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </ScrollArea>
+
+      <Separator />
+
+      <div className="flex items-center gap-2 p-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={!tab.id}
+          onClick={onOpenSave}>
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          Save current
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          onClick={() => void openFullPanel()}>
+          <PanelRightOpen className="mr-1 h-3.5 w-3.5" />
+          Full panel
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export default Popup

@@ -1,208 +1,120 @@
-import { useEffect, useState } from "react"
+import { ShieldCheck } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
-import type { UiMsg, UiResp } from "./lib/messages"
+import "./style.css"
 
-async function send(msg: UiMsg): Promise<UiResp> {
-  return (await chrome.runtime.sendMessage(msg)) as UiResp
+import { DEFAULT_LOCK_POLICY, type LockPolicy } from "~lib/session-lock"
+import { send } from "~lib/messaging"
+import { Badge } from "~components/ui/badge"
+import { Separator } from "~components/ui/separator"
+import { Skeleton } from "~components/ui/skeleton"
+import { Toaster } from "~components/ui/sonner"
+import { CloudflareConfigCard } from "~components/cloudflare-config-card"
+import { LockPolicyCard } from "~components/lock-policy-card"
+import { MasterPasswordCard } from "~components/master-password-card"
+
+type Status = {
+  cfConfigured: boolean
+  initialized: boolean
+  unlocked: boolean
+  lockPolicy: LockPolicy
 }
 
 function Options() {
-  const [accountId, setAccountId] = useState("")
-  const [namespaceId, setNamespaceId] = useState("")
-  const [apiToken, setApiToken] = useState("")
-  const [password, setPassword] = useState("")
-  const [passwordConfirm, setPasswordConfirm] = useState("")
-  const [status, setStatus] = useState<{
-    initialized: boolean
-    unlocked: boolean
-    cfConfigured: boolean
-  } | null>(null)
-  const [message, setMessage] = useState("")
+  const [status, setStatus] = useState<Status | null>(null)
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const response = await send({ type: "STATUS" })
-    if ("kind" in response && response.kind === "status") {
+    if (response.ok && "kind" in response && response.kind === "status") {
       setStatus({
+        cfConfigured: response.cfConfigured,
         initialized: response.initialized,
         unlocked: response.unlocked,
-        cfConfigured: response.cfConfigured
+        lockPolicy: response.lockPolicy
       })
     }
-  }
-
-  useEffect(() => {
-    refresh()
   }, [])
 
-  async function saveCf() {
-    setMessage("")
-    const response = await send({
-      type: "SET_CF_CONFIG",
-      cfg: { accountId, namespaceId, apiToken }
-    })
-    if ("error" in response) {
-      setMessage(response.error)
-    } else {
-      setMessage("Cloudflare config saved.")
-      await refresh()
-    }
-  }
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
 
-  async function initPassword() {
-    setMessage("")
-    if (password !== passwordConfirm) {
-      setMessage("passwords do not match")
-      return
-    }
-    if (password.length < 12) {
-      setMessage("password too short (min 12 chars)")
-      return
-    }
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <div className="mx-auto max-w-3xl px-6 py-10">
+        <header className="mb-8 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Session Stash</h1>
+            <p className="text-sm text-muted-foreground">
+              Settings · encryption keys, credentials, auto-lock
+            </p>
+          </div>
+          <StatusPills status={status} />
+        </header>
 
-    const response = await send({ type: "INIT_META", password })
-    if ("error" in response) {
-      setMessage(response.error)
-    } else {
-      setMessage("Initialized.")
-      await refresh()
-    }
-  }
+        {status === null ? (
+          <LoadingState />
+        ) : (
+          <div className="flex flex-col gap-6">
+            <CloudflareConfigCard
+              configured={status.cfConfigured}
+              onSaved={refresh}
+            />
+            <Separator />
+            <MasterPasswordCard status={status} onChanged={refresh} />
+            <LockPolicyCard
+              policy={status.lockPolicy ?? DEFAULT_LOCK_POLICY}
+              disabled={!status.initialized}
+              onChanged={refresh}
+            />
+          </div>
+        )}
 
-  async function unlockNow() {
-    setMessage("")
-    const response = await send({ type: "UNLOCK", password })
-    if ("error" in response) {
-      setMessage(response.error)
-    } else {
-      setMessage("Unlocked.")
-      setPassword("")
-      await refresh()
-    }
-  }
+        <footer className="mt-10 text-center text-xs text-muted-foreground">
+          End-to-end encrypted · PBKDF2-SHA256 600k · AES-GCM-256
+        </footer>
+      </div>
 
-  async function lockNow() {
-    await send({ type: "LOCK" })
-    await refresh()
-    setMessage("Locked.")
+      <Toaster position="bottom-right" richColors closeButton />
+    </div>
+  )
+}
+
+function StatusPills({ status }: { status: Status | null }) {
+  if (!status) {
+    return <Skeleton className="h-6 w-32" />
   }
 
   return (
-    <div style={{ fontFamily: "system-ui", padding: 24, maxWidth: 560 }}>
-      <h1>Session Stash - Settings</h1>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Badge variant={status.cfConfigured ? "default" : "secondary"}>
+        {status.cfConfigured ? "CF ready" : "No CF"}
+      </Badge>
+      <Badge variant={status.initialized ? "default" : "secondary"}>
+        {status.initialized ? "Vault ready" : "Not initialized"}
+      </Badge>
+      <Badge
+        variant={status.unlocked ? "default" : "outline"}
+        className={
+          status.unlocked
+            ? "bg-emerald-500 text-white hover:bg-emerald-500/90"
+            : ""
+        }>
+        {status.unlocked ? "Unlocked" : "Locked"}
+      </Badge>
+    </div>
+  )
+}
 
-      <section>
-        <h2>Cloudflare KV</h2>
-        <p>Create a scoped API token limited to your KV namespace (Read + Write).</p>
-        <label>
-          Account ID
-          <br />
-          <input
-            value={accountId}
-            onChange={(event) => setAccountId(event.target.value)}
-            style={{ width: "100%" }}
-          />
-        </label>
-        <br />
-        <br />
-        <label>
-          Namespace ID
-          <br />
-          <input
-            value={namespaceId}
-            onChange={(event) => setNamespaceId(event.target.value)}
-            style={{ width: "100%" }}
-          />
-        </label>
-        <br />
-        <br />
-        <label>
-          API Token
-          <br />
-          <input
-            type="password"
-            value={apiToken}
-            onChange={(event) => setApiToken(event.target.value)}
-            style={{ width: "100%" }}
-          />
-        </label>
-        <br />
-        <br />
-        <button onClick={saveCf}>Save CF config</button>
-      </section>
-
-      <section>
-        <h2>Master Password</h2>
-        <p style={{ color: "#b91c1c" }}>
-          <strong>Warning:</strong> If you forget your master password, all stored
-          sessions become permanently unreadable. There is no recovery mechanism.
-        </p>
-
-        {status && !status.initialized && (
-          <>
-            <label>
-              New password
-              <br />
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                style={{ width: "100%" }}
-              />
-            </label>
-            <br />
-            <br />
-            <label>
-              Confirm
-              <br />
-              <input
-                type="password"
-                value={passwordConfirm}
-                onChange={(event) => setPasswordConfirm(event.target.value)}
-                style={{ width: "100%" }}
-              />
-            </label>
-            <br />
-            <br />
-            <button onClick={initPassword}>Initialize</button>
-          </>
-        )}
-
-        {status && status.initialized && !status.unlocked && (
-          <>
-            <label>
-              Password
-              <br />
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                style={{ width: "100%" }}
-              />
-            </label>
-            <br />
-            <br />
-            <button onClick={unlockNow}>Unlock</button>
-          </>
-        )}
-
-        {status?.unlocked && (
-          <>
-            <p>
-              Status: <strong>Unlocked</strong>
-            </p>
-            <button onClick={lockNow}>Lock now</button>
-          </>
-        )}
-      </section>
-
-      {message && <p style={{ marginTop: 16, color: "#1d4ed8" }}>{message}</p>}
-
-      <hr style={{ marginTop: 24 }} />
-      <p style={{ fontSize: 12, color: "#64748b" }}>
-        CF config: {status?.cfConfigured ? "✓" : "-"}&nbsp;&nbsp; Initialized:{" "}
-        {status?.initialized ? "✓" : "-"}&nbsp;&nbsp; Unlocked:{" "}
-        {status?.unlocked ? "✓" : "-"}
-      </p>
+function LoadingState() {
+  return (
+    <div className="flex flex-col gap-6">
+      <Skeleton className="h-52 w-full" />
+      <Skeleton className="h-52 w-full" />
+      <Skeleton className="h-32 w-full" />
     </div>
   )
 }

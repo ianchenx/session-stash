@@ -1,0 +1,175 @@
+import { Globe, Plus, UserPlus } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+
+import type { PanelState } from "~lib/use-session-panel"
+import type { IndexEntry } from "~lib/types"
+import { Badge } from "~components/ui/badge"
+import { Button } from "~components/ui/button"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle
+} from "~components/ui/empty"
+import { ScrollArea } from "~components/ui/scroll-area"
+import { AccountRow } from "~components/panel/account-row"
+import { RenameDialog } from "~components/panel/rename-dialog"
+
+type Props = {
+  panel: PanelState
+  onSaveCurrent: () => void
+}
+
+export function AccountsView({ panel, onSaveCurrent }: Props) {
+  const [renameTarget, setRenameTarget] = useState<IndexEntry | null>(null)
+
+  const {
+    selectedDomain,
+    selectedAccounts,
+    activeIdForSelected,
+    tab,
+    doSwitch,
+    pushCurrent,
+    rename,
+    remove
+  } = panel
+
+  if (!selectedDomain) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Globe className="h-5 w-5" />
+            </EmptyMedia>
+            <EmptyTitle>No site selected</EmptyTitle>
+            <EmptyDescription>
+              Pick a site from the sidebar, or open a website and save its session
+              as your first account.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="outline" onClick={onSaveCurrent}>
+              <Plus className="mr-1 h-4 w-4" />
+              Save current tab
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    )
+  }
+
+  const isCurrentDomain = tab.domain === selectedDomain
+
+  async function handleSwitch(id: string) {
+    try {
+      await doSwitch(id)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  async function handlePush(id: string) {
+    try {
+      await pushCurrent(id)
+      toast.success("Pushed current session to cloud.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  async function handleDelete(account: IndexEntry) {
+    const ok = confirm(`Delete "${account.label}" permanently from the cloud?`)
+    if (!ok) return
+    try {
+      await remove(account.id)
+      toast.success(`Deleted ${account.label}.`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  return (
+    <section className="flex flex-1 flex-col">
+      <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold">{selectedDomain}</h2>
+          <p className="truncate text-xs text-muted-foreground">
+            {selectedAccounts.length} account
+            {selectedAccounts.length === 1 ? "" : "s"}
+            {isCurrentDomain ? " · current tab" : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isCurrentDomain && (
+            <Badge variant="outline" className="text-xs">
+              On this tab
+            </Badge>
+          )}
+          <Button
+            size="sm"
+            disabled={!tab.domain || !tab.id}
+            onClick={onSaveCurrent}>
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            Save current
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        {selectedAccounts.length === 0 ? (
+          <div className="p-6">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <UserPlus className="h-5 w-5" />
+                </EmptyMedia>
+                <EmptyTitle>No accounts for this site</EmptyTitle>
+                <EmptyDescription>
+                  {isCurrentDomain
+                    ? "Sign in on this tab first, then snapshot the session as your first account."
+                    : `Open ${selectedDomain} in a tab to save its first session.`}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  onClick={onSaveCurrent}
+                  disabled={!isCurrentDomain || !tab.id}>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Save current session
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 p-4">
+            {selectedAccounts.map((account) => (
+              <AccountRow
+                key={account.id}
+                account={account}
+                active={account.id === activeIdForSelected}
+                isCurrentDomain={isCurrentDomain}
+                onSwitch={() => handleSwitch(account.id)}
+                onPush={() => handlePush(account.id)}
+                onRename={() => setRenameTarget(account)}
+                onDelete={() => handleDelete(account)}
+              />
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+
+      <RenameDialog
+        target={renameTarget}
+        onClose={() => setRenameTarget(null)}
+        onRename={async (id, label) => {
+          await rename(id, label)
+          toast.success("Renamed.")
+        }}
+      />
+    </section>
+  )
+}
