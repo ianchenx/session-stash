@@ -89,10 +89,10 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Cloudflare KV</CardTitle>
-        <CardDescription>
-          Your sessions are encrypted locally and synced to your own KV namespace.{" "}
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-base">Cloudflare KV</CardTitle>
+        <CardDescription className="text-xs">
+          Encrypted locally, synced to your own KV namespace.{" "}
           <a
             href="https://developers.cloudflare.com/kv/api/"
             target="_blank"
@@ -102,7 +102,7 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
           </a>
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="cf-account-id">Account ID</FieldLabel>
@@ -149,7 +149,7 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
           </Field>
         </FieldGroup>
       </CardContent>
-      <CardFooter className="justify-between">
+      <CardFooter className="justify-between p-4 pt-3">
         <p className="text-xs text-muted-foreground">
           {loading
             ? "Loading saved config…"

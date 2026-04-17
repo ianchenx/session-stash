@@ -59,14 +59,13 @@ export function LockPolicyCard({ policy, disabled, onChanged }: Props) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Auto-lock</CardTitle>
-        <CardDescription>
-          Decide how long the vault stays unlocked after you last used it. Shorter
-          is safer, longer is more convenient.
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-base">Auto-lock</CardTitle>
+        <CardDescription className="text-xs">
+          How long the vault stays unlocked after last use.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         <ToggleGroup
           type="single"
           value={policyToValue(policy)}

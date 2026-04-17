@@ -107,18 +107,15 @@ export function useSessionPanel() {
 
   useEffect(() => {
     if (!status?.unlocked) {
+      selectedInitialized.current = false
       return
     }
-    if (selectedInitialized.current && selectedDomain) {
-      const stillExists = domains.some((d) => d.domain === selectedDomain)
-      if (stillExists) {
-        return
-      }
+    if (selectedInitialized.current) {
+      return
     }
-    const next = tab.domain ?? domains[0]?.domain ?? null
-    setSelectedDomain(next)
+    setSelectedDomain(tab.domain ?? null)
     selectedInitialized.current = true
-  }, [domains, selectedDomain, status?.unlocked, tab.domain])
+  }, [status?.unlocked, tab.domain])
 
   const selectedAccounts = useMemo(
     () => accounts.filter((account) => account.domain === selectedDomain),

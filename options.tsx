@@ -6,7 +6,6 @@ import "./style.css"
 import { DEFAULT_LOCK_POLICY, type LockPolicy } from "~lib/session-lock"
 import { send } from "~lib/messaging"
 import { Badge } from "~components/ui/badge"
-import { Separator } from "~components/ui/separator"
 import { Skeleton } from "~components/ui/skeleton"
 import { Toaster } from "~components/ui/sonner"
 import { CloudflareConfigCard } from "~components/cloudflare-config-card"
@@ -41,15 +40,15 @@ function Options() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        <header className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <ShieldCheck className="h-5 w-5" />
+      <div className="mx-auto max-w-xl px-4 py-6">
+        <header className="mb-5 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <ShieldCheck className="h-4 w-4" />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Session Stash</h1>
-            <p className="text-sm text-muted-foreground">
-              Settings · encryption keys, credentials, auto-lock
+            <h1 className="text-base font-semibold tracking-tight">Session Stash</h1>
+            <p className="text-xs text-muted-foreground">
+              Settings · keys, credentials, auto-lock
             </p>
           </div>
           <StatusPills status={status} />
@@ -58,12 +57,11 @@ function Options() {
         {status === null ? (
           <LoadingState />
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
             <CloudflareConfigCard
               configured={status.cfConfigured}
               onSaved={refresh}
             />
-            <Separator />
             <MasterPasswordCard status={status} onChanged={refresh} />
             <LockPolicyCard
               policy={status.lockPolicy ?? DEFAULT_LOCK_POLICY}
@@ -73,7 +71,7 @@ function Options() {
           </div>
         )}
 
-        <footer className="mt-10 text-center text-xs text-muted-foreground">
+        <footer className="mt-6 text-center text-[11px] text-muted-foreground">
           End-to-end encrypted · PBKDF2-SHA256 600k · AES-GCM-256
         </footer>
       </div>
@@ -111,10 +109,10 @@ function StatusPills({ status }: { status: Status | null }) {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col gap-6">
-      <Skeleton className="h-52 w-full" />
-      <Skeleton className="h-52 w-full" />
-      <Skeleton className="h-32 w-full" />
+    <div className="flex flex-col gap-3">
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-24 w-full" />
     </div>
   )
 }

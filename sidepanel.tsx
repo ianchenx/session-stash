@@ -9,7 +9,7 @@ import { AccountsView } from "~components/panel/accounts-view"
 import { AppHeader } from "~components/panel/app-header"
 import { ConflictDialog } from "~components/panel/conflict-dialog"
 import { SaveNewDialog } from "~components/panel/save-new-dialog"
-import { SiteSidebar } from "~components/panel/site-sidebar"
+import { SiteListView } from "~components/panel/site-list-view"
 import { UnlockGate } from "~components/panel/unlock-gate"
 
 function openSettings() {
@@ -20,7 +20,7 @@ function SidePanel() {
   const panel = useSessionPanel()
   const [saveOpen, setSaveOpen] = useState(false)
 
-  const { status, tab, conflict, dismissConflict } = panel
+  const { status, tab, conflict, dismissConflict, selectedDomain, setSelectedDomain } = panel
 
   const openSaveDialog = () => {
     if (!tab.domain || !tab.id) {
@@ -45,11 +45,15 @@ function SidePanel() {
         </div>
       )
     }
+    if (!selectedDomain) {
+      return <SiteListView panel={panel} onSaveCurrent={openSaveDialog} />
+    }
     return (
-      <div className="flex flex-1 overflow-hidden">
-        <SiteSidebar panel={panel} onSaveCurrent={openSaveDialog} />
-        <AccountsView panel={panel} onSaveCurrent={openSaveDialog} />
-      </div>
+      <AccountsView
+        panel={panel}
+        onSaveCurrent={openSaveDialog}
+        onBack={() => setSelectedDomain(null)}
+      />
     )
   })()
 

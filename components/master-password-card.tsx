@@ -98,20 +98,20 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="p-4 pb-2">
         <div className="flex items-center gap-2">
           {status.unlocked ? (
-            <Unlock className="h-5 w-5 text-emerald-500" />
+            <Unlock className="h-4 w-4 text-emerald-500" />
           ) : (
-            <Lock className="h-5 w-5 text-muted-foreground" />
+            <Lock className="h-4 w-4 text-muted-foreground" />
           )}
-          <CardTitle className="text-lg">Master Password</CardTitle>
+          <CardTitle className="text-base">Master Password</CardTitle>
         </div>
-        <CardDescription>
-          Derives the encryption key for every account. Never leaves your device.
+        <CardDescription className="text-xs">
+          Derives the encryption key. Never leaves your device.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-3 p-4 pt-0">
         {cfMissing && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
@@ -189,7 +189,7 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="justify-end gap-2">
+      <CardFooter className="justify-end gap-2 p-4 pt-3">
         {!status.initialized && !cfMissing && (
           <Button onClick={initPassword} disabled={busy}>
             Initialize vault
