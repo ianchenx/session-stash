@@ -12,6 +12,8 @@ function mockChrome() {
   let listener: Listener | null = null
   const setBadgeText = vi.fn(async () => undefined)
   const setBadgeBackgroundColor = vi.fn(async () => undefined)
+  const alarmsCreate = vi.fn()
+  const alarmsClear = vi.fn(async () => true)
 
   ;(globalThis as typeof globalThis & { chrome: typeof chrome }).chrome = {
     runtime: {
@@ -19,11 +21,31 @@ function mockChrome() {
         addListener(callback: Listener) {
           listener = callback
         }
+      },
+      onStartup: {
+        addListener: vi.fn()
       }
     },
     action: {
       setBadgeText,
       setBadgeBackgroundColor
+    },
+    alarms: {
+      create: alarmsCreate,
+      clear: alarmsClear,
+      onAlarm: { addListener: vi.fn() }
+    },
+    storage: {
+      local: {
+        get: vi.fn(async () => ({})),
+        set: vi.fn(async () => undefined),
+        remove: vi.fn(async () => undefined)
+      },
+      session: {
+        get: vi.fn(async () => ({})),
+        set: vi.fn(async () => undefined),
+        remove: vi.fn(async () => undefined)
+      }
     }
   } as unknown as typeof chrome
 
@@ -35,7 +57,9 @@ function mockChrome() {
       return listener
     },
     setBadgeText,
-    setBadgeBackgroundColor
+    setBadgeBackgroundColor,
+    alarmsCreate,
+    alarmsClear
   }
 }
 
@@ -77,6 +101,7 @@ describe("background DELETE", () => {
 
     vi.doMock("../store", () => ({
       getActiveAccount,
+      getAllActiveAccounts: vi.fn(async () => ({})),
       getCfConfig,
       setActiveAccount,
       setCfConfig: vi.fn(async () => undefined)
@@ -90,11 +115,22 @@ describe("background DELETE", () => {
     vi.doMock("../switcher", () => ({
       deleteAccountFlow,
       overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
       saveAsNewAccount: vi.fn(async () => "new-id"),
       switchAccount: vi.fn(async () => ({
         pushedFrom: false,
         newFromVersion: null
       }))
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey: vi.fn(async () => undefined),
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
     }))
 
     await import("../../background")

@@ -4,6 +4,8 @@ import type { UiMsg, UiResp } from "./lib/messages"
 import type { IndexEntry } from "./lib/types"
 import { getETLDPlusOne } from "./lib/domain"
 
+import "./style.css"
+
 async function send(msg: UiMsg): Promise<UiResp> {
   return (await chrome.runtime.sendMessage(msg)) as UiResp
 }

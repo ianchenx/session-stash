@@ -1,20 +1,91 @@
-import type { ConflictInfo } from "./lib/types"
-import type { UiMsg, UiResp } from "./lib/messages"
-
-import { clearCookies, clearLocalStorage, injectCookies, injectLocalStorage, snapshotCookies, snapshotLocalStorage } from "./lib/session"
+import {
+  initializeMeta,
+  isInitialized,
+  loadIndex,
+  unlock
+} from "./lib/account"
 import { CfKvClient } from "./lib/cf-kv"
+import type { UiMsg, UiResp } from "./lib/messages"
+import {
+  cancelAutoLock,
+  clearSessionKey,
+  getLockPolicy,
+  isLockAlarm,
+  persistSessionKey,
+  restoreSessionKey,
+  scheduleAutoLock,
+  setLockPolicy,
+  type LockPolicy
+} from "./lib/session-lock"
+import {
+  clearCookies,
+  clearLocalStorage,
+  injectCookies,
+  injectLocalStorage,
+  snapshotCookies,
+  snapshotLocalStorage
+} from "./lib/session"
+import {
+  getActiveAccount,
+  getAllActiveAccounts,
+  getCfConfig,
+  setActiveAccount,
+  setCfConfig
+} from "./lib/store"
 import {
   deleteAccountFlow,
   overwriteWithCurrent,
+  renameAccount,
   saveAsNewAccount,
   switchAccount,
   type SessionAdapter
 } from "./lib/switcher"
-import { getActiveAccount, getCfConfig, setActiveAccount, setCfConfig } from "./lib/store"
-import { initializeMeta, isInitialized, loadIndex, unlock } from "./lib/account"
+import type { ConflictInfo } from "./lib/types"
 
 let masterKey: CryptoKey | null = null
 let switchLock: Promise<unknown> | null = null
+let restorePromise: Promise<void> | null = null
+
+async function ensureKeyRestored(): Promise<void> {
+  if (masterKey !== null || restorePromise) {
+    await restorePromise
+    return
+  }
+
+  restorePromise = (async () => {
+    const restored = await restoreSessionKey()
+    if (restored) {
+      masterKey = restored
+    }
+  })()
+
+  try {
+    await restorePromise
+  } finally {
+    restorePromise = null
+  }
+}
+
+async function setUnlocked(key: CryptoKey): Promise<void> {
+  masterKey = key
+  await persistSessionKey(key)
+  const policy = await getLockPolicy()
+  await scheduleAutoLock(policy)
+}
+
+async function setLocked(): Promise<void> {
+  masterKey = null
+  await clearSessionKey()
+  await cancelAutoLock()
+}
+
+async function touchLockTimer(): Promise<void> {
+  if (!masterKey) {
+    return
+  }
+  const policy = await getLockPolicy()
+  await scheduleAutoLock(policy)
+}
 
 async function getClient(): Promise<CfKvClient> {
   const config = await getCfConfig()
@@ -90,17 +161,21 @@ function isConflictInfo(value: unknown): value is ConflictInfo {
 }
 
 async function handle(msg: UiMsg): Promise<UiResp> {
+  await ensureKeyRestored()
+
   switch (msg.type) {
     case "STATUS": {
       const config = await getCfConfig()
       const client = config ? new CfKvClient(config) : null
       const initialized = client ? await isInitialized(client) : false
+      const policy = await getLockPolicy()
       return {
         ok: true,
         kind: "status",
         initialized,
         unlocked: masterKey !== null,
-        cfConfigured: config !== null
+        cfConfigured: config !== null,
+        lockPolicy: policy
       }
     }
 
@@ -111,26 +186,58 @@ async function handle(msg: UiMsg): Promise<UiResp> {
 
     case "INIT_META": {
       const client = await getClient()
-      masterKey = await initializeMeta(client, msg.password)
+      const key = await initializeMeta(client, msg.password)
+      await setUnlocked(key)
       return { ok: true }
     }
 
     case "UNLOCK": {
       const client = await getClient()
-      masterKey = await unlock(client, msg.password)
+      const key = await unlock(client, msg.password)
+      await setUnlocked(key)
       return { ok: true }
     }
 
     case "LOCK": {
-      masterKey = null
+      await setLocked()
       return { ok: true }
+    }
+
+    case "SET_LOCK_POLICY": {
+      await setLockPolicy(msg.policy)
+      if (masterKey) {
+        await scheduleAutoLock(msg.policy)
+      }
+      return { ok: true }
+    }
+
+    case "GET_LOCK_POLICY": {
+      const policy = await getLockPolicy()
+      return { ok: true, kind: "lock-policy", policy }
+    }
+
+    case "LIST_ALL": {
+      const client = await getClient()
+      const key = requireKey()
+      await touchLockTimer()
+      const index = await loadIndex(client, key)
+      const activeByDomain = await getAllActiveAccounts()
+      return {
+        ok: true,
+        kind: "all-accounts",
+        entries: index.accounts,
+        activeByDomain
+      }
     }
 
     case "LIST_ACCOUNTS": {
       const client = await getClient()
       const key = requireKey()
+      await touchLockTimer()
       const index = await loadIndex(client, key)
-      const entries = index.accounts.filter((account) => account.domain === msg.domain)
+      const entries = index.accounts.filter(
+        (account) => account.domain === msg.domain
+      )
       const activeId = await getActiveAccount(msg.domain)
       return {
         ok: true,
@@ -144,6 +251,7 @@ async function handle(msg: UiMsg): Promise<UiResp> {
       return withLock(async () => {
         const client = await getClient()
         const key = requireKey()
+        await touchLockTimer()
         const adapter = makeAdapter(msg.domain, msg.tabId)
         const snapshot = await adapter.snapshot()
         const id = await saveAsNewAccount({
@@ -163,6 +271,7 @@ async function handle(msg: UiMsg): Promise<UiResp> {
       return withLock(async () => {
         const client = await getClient()
         const key = requireKey()
+        await touchLockTimer()
         const adapter = makeAdapter(msg.domain, msg.tabId)
         try {
           const result = await switchAccount({
@@ -181,7 +290,9 @@ async function handle(msg: UiMsg): Promise<UiResp> {
           })
           await setActiveAccount(msg.domain, msg.toId)
           const index = await loadIndex(client, key)
-          const toLabel = index.accounts.find((account) => account.id === msg.toId)?.label ?? "?"
+          const toLabel =
+            index.accounts.find((account) => account.id === msg.toId)?.label ??
+            "?"
           await updateBadge(msg.tabId, toLabel)
           return {
             ok: true,
@@ -211,8 +322,11 @@ async function handle(msg: UiMsg): Promise<UiResp> {
       return withLock(async () => {
         const client = await getClient()
         const key = requireKey()
+        await touchLockTimer()
         const index = await loadIndex(client, key)
-        const entry = index.accounts.find((account) => account.id === msg.accountId)
+        const entry = index.accounts.find(
+          (account) => account.id === msg.accountId
+        )
         if (!entry) {
           throw new Error(`account ${msg.accountId} not found`)
         }
@@ -231,8 +345,11 @@ async function handle(msg: UiMsg): Promise<UiResp> {
       return withLock(async () => {
         const client = await getClient()
         const key = requireKey()
+        await touchLockTimer()
         const index = await loadIndex(client, key)
-        const entry = index.accounts.find((account) => account.id === msg.accountId)
+        const entry = index.accounts.find(
+          (account) => account.id === msg.accountId
+        )
         await deleteAccountFlow({ client, key, accountId: msg.accountId })
         if (entry) {
           const activeId = await getActiveAccount(entry.domain)
@@ -241,6 +358,21 @@ async function handle(msg: UiMsg): Promise<UiResp> {
             await updateBadge(msg.tabId, null)
           }
         }
+        return { ok: true }
+      })
+    }
+
+    case "RENAME": {
+      return withLock(async () => {
+        const client = await getClient()
+        const key = requireKey()
+        await touchLockTimer()
+        await renameAccount({
+          client,
+          key,
+          accountId: msg.accountId,
+          label: msg.label
+        })
         return { ok: true }
       })
     }
@@ -255,4 +387,14 @@ chrome.runtime.onMessage.addListener((msg: UiMsg, _sender, sendResponse) => {
       sendResponse({ ok: false, error: message })
     })
   return true
+})
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (isLockAlarm(alarm)) {
+    void setLocked()
+  }
+})
+
+chrome.runtime.onStartup.addListener(() => {
+  void ensureKeyRestored()
 })

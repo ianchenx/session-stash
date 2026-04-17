@@ -11,6 +11,11 @@ export async function getActiveAccount(domain: string): Promise<string | null> {
   return map[domain] ?? null
 }
 
+export async function getAllActiveAccounts(): Promise<Record<string, string>> {
+  const result = await chrome.storage.local.get(ACTIVE_KEY)
+  return { ...((result[ACTIVE_KEY] as ActiveMap | undefined) ?? {}) }
+}
+
 export async function setActiveAccount(
   domain: string,
   accountId: string | null

@@ -261,3 +261,46 @@ export async function deleteAccountFlow(args: DeleteArgs): Promise<void> {
   await saveIndex(client, key, next)
   await deleteAccount(client, accountId)
 }
+
+export type RenameArgs = {
+  client: CfKvClient
+  key: CryptoKey
+  accountId: string
+  label: string
+}
+
+export async function renameAccount(args: RenameArgs): Promise<void> {
+  const { client, key, accountId, label } = args
+  const trimmed = label.trim()
+  if (!trimmed) {
+    throw new Error("label cannot be empty")
+  }
+
+  const account = await loadAccount(client, key, accountId)
+  if (!account) {
+    throw new Error(`account ${accountId} not found`)
+  }
+
+  const index = await loadIndex(client, key)
+  const conflict = index.accounts.find(
+    (entry) =>
+      entry.id !== accountId &&
+      entry.domain === account.domain &&
+      entry.label === trimmed
+  )
+  if (conflict) {
+    throw new Error(`duplicate label "${trimmed}" for domain ${account.domain}`)
+  }
+
+  const now = Date.now()
+  const renamed: Account = { ...account, label: trimmed, updatedAt: now }
+  await saveAccount(client, key, renamed)
+
+  const next: Index = {
+    accounts: index.accounts.map((entry) =>
+      entry.id === accountId ? { ...entry, label: trimmed, updatedAt: now } : entry
+    ),
+    updatedAt: now
+  }
+  await saveIndex(client, key, next)
+}
