@@ -13,7 +13,11 @@ import { SiteListView } from "~components/panel/site-list-view"
 import { UnlockGate } from "~components/panel/unlock-gate"
 
 function openSettings() {
-  chrome.runtime.openOptionsPage()
+  try {
+    chrome.runtime.openOptionsPage()
+  } catch {
+    chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
+  }
 }
 
 function SidePanel() {

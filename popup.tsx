@@ -44,7 +44,11 @@ import { SiteFavicon } from "~components/site-favicon"
 const POPUP_WIDTH = 360
 
 function openSettings() {
-  chrome.runtime.openOptionsPage()
+  try {
+    chrome.runtime.openOptionsPage()
+  } catch {
+    chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
+  }
 }
 
 async function openFullPanel() {
