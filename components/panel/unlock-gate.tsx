@@ -13,6 +13,7 @@ import {
   EmptyTitle
 } from "~components/ui/empty"
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
+import { useAsyncAction } from "~lib/use-async-action"
 import type { Status } from "~lib/use-session-panel"
 
 type Props = {
@@ -23,7 +24,12 @@ type Props = {
 
 export function UnlockGate({ status, onUnlock, onOpenSettings }: Props) {
   const [password, setPassword] = useState("")
-  const [busy, setBusy] = useState(false)
+  const unlocker = useAsyncAction(
+    async (pw: string) => {
+      await onUnlock(pw)
+      setPassword("")
+    }
+  )
 
   if (!status.cfConfigured) {
     return (
@@ -53,20 +59,12 @@ export function UnlockGate({ status, onUnlock, onOpenSettings }: Props) {
     )
   }
 
-  async function submit() {
+  function submit() {
     if (!password) {
       toast.error("Enter your master password.")
       return
     }
-    setBusy(true)
-    try {
-      await onUnlock(password)
-      setPassword("")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
-    }
+    void unlocker.run(password)
   }
 
   return (
@@ -91,14 +89,14 @@ export function UnlockGate({ status, onUnlock, onOpenSettings }: Props) {
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
-                void submit()
+                submit()
               }
             }}
           />
         </Field>
       </FieldGroup>
 
-      <Button onClick={submit} disabled={busy}>
+      <Button loading={unlocker.busy} onClick={submit}>
         Unlock
         <ArrowRight className="ml-1 h-4 w-4" />
       </Button>

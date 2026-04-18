@@ -5,7 +5,6 @@ import {
   RefreshCcw,
   Trash2
 } from "lucide-react"
-import { useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "~components/ui/avatar"
 import { Button } from "~components/ui/button"
@@ -25,6 +24,8 @@ type Props = {
   account: IndexEntry
   active: boolean
   isCurrentDomain: boolean
+  busy: boolean
+  disabledOthers: boolean
   onSwitch: () => void
   onPush: () => void
   onRename: () => void
@@ -42,27 +43,21 @@ export function AccountRow({
   account,
   active,
   isCurrentDomain,
+  busy,
+  disabledOthers,
   onSwitch,
   onPush,
   onRename,
   onDelete
 }: Props) {
-  const [busy, setBusy] = useState(false)
-
-  async function run(fn: () => Promise<void> | void) {
-    setBusy(true)
-    try {
-      await fn()
-    } finally {
-      setBusy(false)
-    }
-  }
+  const actionDisabled = busy || disabledOthers
 
   return (
     <div
       className={cn(
         "flex items-center gap-2.5 rounded-lg border bg-card p-2.5 transition-colors",
-        active && "border-primary/40 bg-primary/5"
+        active && "border-primary/40 bg-primary/5",
+        disabledOthers && "opacity-60"
       )}>
       <div className="relative shrink-0">
         <Avatar className="size-8">
@@ -97,8 +92,9 @@ export function AccountRow({
           <Button
             size="sm"
             className="h-8"
-            disabled={busy}
-            onClick={() => void run(onSwitch)}>
+            loading={busy}
+            disabled={disabledOthers}
+            onClick={onSwitch}>
             <RefreshCcw />
             Switch
           </Button>
@@ -107,8 +103,9 @@ export function AccountRow({
           <Button
             size="sm"
             className="h-8"
-            disabled={busy}
-            onClick={() => void run(onPush)}>
+            loading={busy}
+            disabled={disabledOthers}
+            onClick={onPush}>
             <ArrowUpFromLine />
             Push
           </Button>
@@ -119,7 +116,7 @@ export function AccountRow({
               size="icon"
               variant="ghost"
               className="h-8 w-8"
-              disabled={busy}>
+              disabled={actionDisabled}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

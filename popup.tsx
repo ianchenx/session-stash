@@ -32,13 +32,16 @@ import { Logo } from "~components/ui/logo"
 import { ScrollArea } from "~components/ui/scroll-area"
 import { Separator } from "~components/ui/separator"
 import { Toaster } from "~components/ui/sonner"
+import { CenteredSpinner } from "~components/ui/spinner"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
 } from "~components/ui/tooltip"
+import { cn } from "~lib/cn"
 import { formatRelative } from "~lib/format"
+import { useAsyncAction } from "~lib/use-async-action"
 import { useSessionPanel } from "~lib/use-session-panel"
 
 const POPUP_WIDTH = 360
@@ -80,7 +83,7 @@ function Popup() {
       <Header panel={panel} />
 
       {!status ? (
-        <div className="flex-1" />
+        <CenteredSpinner />
       ) : !status.cfConfigured || !status.initialized ? (
         <SetupGate
           needsCf={!status.cfConfigured}
@@ -123,6 +126,11 @@ function Popup() {
 
 function Header({ panel }: { panel: ReturnType<typeof useSessionPanel> }) {
   const { status } = panel
+  const locker = useAsyncAction(async () => {
+    await panel.lock()
+    toast.success("Locked.")
+  })
+
   return (
     <header className="flex items-center gap-2 border-b px-3 py-2.5">
       <div className="flex h-7 w-7 items-center justify-center shrink-0">
@@ -148,16 +156,8 @@ function Header({ panel }: { panel: ReturnType<typeof useSessionPanel> }) {
                 size="icon"
                 variant="ghost"
                 className="h-7 w-7"
-                onClick={async () => {
-                  try {
-                    await panel.lock()
-                    toast.success("Locked.")
-                  } catch (error) {
-                    toast.error(
-                      error instanceof Error ? error.message : String(error)
-                    )
-                  }
-                }}>
+                loading={locker.busy}
+                onClick={() => void locker.run()}>
                 <Lock className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
@@ -230,22 +230,20 @@ function UnlockInline({
   onUnlock: (password: string) => Promise<void>
 }) {
   const [password, setPassword] = useState("")
-  const [busy, setBusy] = useState(false)
+  const unlocker = useAsyncAction(
+    async (pw: string) => {
+      await onUnlock(pw)
+      setPassword("")
+    },
+    { onError: (error) => toast.error(error.message) }
+  )
 
-  async function submit() {
+  function submit() {
     if (!password) {
       toast.error("Enter your master password.")
       return
     }
-    setBusy(true)
-    try {
-      await onUnlock(password)
-      setPassword("")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
-    }
+    void unlocker.run(password)
   }
 
   return (
@@ -267,13 +265,13 @@ function UnlockInline({
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
-                void submit()
+                submit()
               }
             }}
           />
         </Field>
       </FieldGroup>
-      <Button disabled={busy} onClick={submit}>
+      <Button loading={unlocker.busy} onClick={submit}>
         Unlock
       </Button>
     </div>
@@ -297,9 +295,21 @@ function Body({
     doSwitch,
     pushCurrent
   } = panel
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
   const showingCurrent = tab.domain && selectedDomain === tab.domain
   const accounts = showingCurrent ? selectedAccounts : []
+
+  async function runWithPending(id: string, fn: () => Promise<void>) {
+    setPendingId(id)
+    try {
+      await fn()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    } finally {
+      setPendingId(null)
+    }
+  }
 
   if (!tab.domain) {
     return (
@@ -356,14 +366,19 @@ function Body({
           <div className="flex flex-col gap-1.5 p-2">
             {accounts.map((account) => {
               const active = account.id === activeIdForSelected
+              const busy = pendingId === account.id
+              const disabledOthers =
+                pendingId !== null && pendingId !== account.id
               return (
                 <div
                   key={account.id}
-                  className={`flex items-center gap-2 rounded-md border p-2 ${
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border p-2",
                     active
                       ? "border-primary/40 bg-primary/5"
-                      : "hover:bg-muted/40"
-                  }`}>
+                      : "hover:bg-muted/40",
+                    disabledOthers && "opacity-60"
+                  )}>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">
                       {account.label}
@@ -379,18 +394,14 @@ function Body({
                     <Button
                       size="sm"
                       className="h-7 text-xs"
-                      onClick={async () => {
-                        try {
+                      loading={busy}
+                      disabled={disabledOthers}
+                      onClick={() =>
+                        void runWithPending(account.id, async () => {
                           await pushCurrent(account.id)
                           toast.success("Pushed.")
-                        } catch (error) {
-                          toast.error(
-                            error instanceof Error
-                              ? error.message
-                              : String(error)
-                          )
-                        }
-                      }}>
+                        })
+                      }>
                       <ArrowUpFromLine />
                       Push
                     </Button>
@@ -398,18 +409,14 @@ function Body({
                     <Button
                       size="sm"
                       className="h-7 text-xs"
-                      onClick={async () => {
-                        try {
+                      loading={busy}
+                      disabled={disabledOthers}
+                      onClick={() =>
+                        void runWithPending(account.id, async () => {
                           await doSwitch(account.id)
                           toast.success(`Switched to ${account.label}.`)
-                        } catch (error) {
-                          toast.error(
-                            error instanceof Error
-                              ? error.message
-                              : String(error)
-                          )
-                        }
-                      }}>
+                        })
+                      }>
                       <RefreshCcw />
                       Switch
                     </Button>

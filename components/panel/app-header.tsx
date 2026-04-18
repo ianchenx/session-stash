@@ -9,16 +9,18 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "~components/ui/tooltip"
+import { useAsyncAction } from "~lib/use-async-action"
 import type { Status } from "~lib/use-session-panel"
 
 type Props = {
   status: Status | null
-  onLock: () => void
+  onLock: () => Promise<void>
   onOpenSettings: () => void
 }
 
 export function AppHeader({ status, onLock, onOpenSettings }: Props) {
-  const locked = !status?.unlocked
+  const locker = useAsyncAction(onLock)
+
   return (
     <header className="flex items-center gap-3 border-b bg-background/80 px-4 py-3 backdrop-blur">
       <div className="flex h-8 w-8 items-center justify-center shrink-0">
@@ -49,7 +51,11 @@ export function AppHeader({ status, onLock, onOpenSettings }: Props) {
         {status?.unlocked && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={onLock}>
+              <Button
+                variant="ghost"
+                size="icon"
+                loading={locker.busy}
+                onClick={() => void locker.run()}>
                 <Lock className="h-4 w-4" />
               </Button>
             </TooltipTrigger>

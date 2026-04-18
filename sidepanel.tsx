@@ -9,6 +9,7 @@ import { ConflictDialog } from "~components/panel/conflict-dialog"
 import { SaveNewDialog } from "~components/panel/save-new-dialog"
 import { SiteListView } from "~components/panel/site-list-view"
 import { UnlockGate } from "~components/panel/unlock-gate"
+import { CenteredSpinner } from "~components/ui/spinner"
 import { Toaster } from "~components/ui/sonner"
 import { useSessionPanel } from "~lib/use-session-panel"
 
@@ -40,7 +41,7 @@ function SidePanel() {
 
   const body = (() => {
     if (!status) {
-      return <div className="flex-1" />
+      return <CenteredSpinner />
     }
     if (!status.cfConfigured || !status.initialized || !status.unlocked) {
       return (
@@ -70,12 +71,8 @@ function SidePanel() {
       <AppHeader
         status={status}
         onLock={async () => {
-          try {
-            await panel.lock()
-            toast.success("Vault locked.")
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : String(error))
-          }
+          await panel.lock()
+          toast.success("Vault locked.")
         }}
         onOpenSettings={openSettings}
       />

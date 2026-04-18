@@ -1,6 +1,4 @@
 import { AlertTriangle } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
 
 import { Button } from "~components/ui/button"
 import {
@@ -11,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "~components/ui/dialog"
+import { useAsyncAction } from "~lib/use-async-action"
 import type { PendingConflict } from "~lib/use-session-panel"
 
 type Props = {
@@ -19,26 +18,21 @@ type Props = {
 }
 
 export function ConflictDialog({ conflict, onCancel }: Props) {
-  const [busy, setBusy] = useState(false)
-
-  async function resolve(resolution: "overwrite" | "discard") {
-    if (!conflict) {
-      return
-    }
-    setBusy(true)
-    try {
+  const resolver = useAsyncAction(
+    async (resolution: "overwrite" | "discard") => {
+      if (!conflict) return
       await conflict.retry(resolution)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
     }
-  }
+  )
 
   return (
     <Dialog
       open={conflict !== null}
-      onOpenChange={(next) => !next && onCancel()}>
+      onOpenChange={(next) => {
+        if (!next && !resolver.busy) {
+          onCancel()
+        }
+      }}>
       <DialogContent>
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -70,17 +64,19 @@ export function ConflictDialog({ conflict, onCancel }: Props) {
           </div>
         )}
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={busy}>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel} disabled={resolver.busy}>
             Cancel
           </Button>
           <Button
             variant="secondary"
-            onClick={() => void resolve("discard")}
-            disabled={busy}>
+            loading={resolver.busy}
+            onClick={() => void resolver.run("discard")}>
             Discard local
           </Button>
-          <Button onClick={() => void resolve("overwrite")} disabled={busy}>
+          <Button
+            loading={resolver.busy}
+            onClick={() => void resolver.run("overwrite")}>
             Overwrite cloud
           </Button>
         </DialogFooter>

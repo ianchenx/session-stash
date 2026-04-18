@@ -10,6 +10,7 @@ import { toast } from "sonner"
 
 import { AccountRow } from "~components/panel/account-row"
 import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
+import { ConfirmDialog } from "~components/panel/confirm-dialog"
 import { RenameDialog } from "~components/panel/rename-dialog"
 import { Button } from "~components/ui/button"
 import {
@@ -38,7 +39,9 @@ type Props = {
 
 export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
   const [renameTarget, setRenameTarget] = useState<IndexEntry | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<IndexEntry | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
   const {
     selectedDomain,
@@ -59,31 +62,14 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
   const isCurrentDomain = tab.domain === selectedDomain
   const canClear = isCurrentDomain && Boolean(tab.id)
 
-  async function handleSwitch(id: string) {
+  async function runWithPending(id: string, fn: () => Promise<void>) {
+    setPendingId(id)
     try {
-      await doSwitch(id)
+      await fn()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error))
-    }
-  }
-
-  async function handlePush(id: string) {
-    try {
-      await pushCurrent(id)
-      toast.success("Pushed current session to cloud.")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    }
-  }
-
-  async function handleDelete(account: IndexEntry) {
-    const ok = confirm(`Delete "${account.label}" permanently from the cloud?`)
-    if (!ok) return
-    try {
-      await remove(account.id)
-      toast.success(`Deleted ${account.label}.`)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
+    } finally {
+      setPendingId(null)
     }
   }
 
@@ -172,10 +158,21 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
                 account={account}
                 active={account.id === activeIdForSelected}
                 isCurrentDomain={isCurrentDomain}
-                onSwitch={() => handleSwitch(account.id)}
-                onPush={() => handlePush(account.id)}
+                busy={pendingId === account.id}
+                disabledOthers={
+                  pendingId !== null && pendingId !== account.id
+                }
+                onSwitch={() =>
+                  void runWithPending(account.id, () => doSwitch(account.id))
+                }
+                onPush={() =>
+                  void runWithPending(account.id, async () => {
+                    await pushCurrent(account.id)
+                    toast.success("Pushed current session to cloud.")
+                  })
+                }
                 onRename={() => setRenameTarget(account)}
-                onDelete={() => handleDelete(account)}
+                onDelete={() => setDeleteTarget(account)}
               />
             ))}
           </div>
@@ -189,6 +186,27 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
           await rename(id, label)
           toast.success("Renamed.")
         }}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete account?"
+        description={
+          deleteTarget
+            ? `Permanently delete "${deleteTarget.label}" from the cloud. This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        successMessage={
+          deleteTarget ? `Deleted ${deleteTarget.label}.` : undefined
+        }
+        onConfirm={async () => {
+          if (deleteTarget) {
+            await remove(deleteTarget.id)
+          }
+        }}
+        onClose={() => setDeleteTarget(null)}
       />
 
       <ClearSessionDialog

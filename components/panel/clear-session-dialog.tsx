@@ -1,6 +1,4 @@
 import { Eraser } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
 
 import { Button } from "~components/ui/button"
 import {
@@ -11,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "~components/ui/dialog"
+import { useAsyncAction } from "~lib/use-async-action"
 
 type Props = {
   open: boolean
@@ -27,23 +26,19 @@ export function ClearSessionDialog({
   onClose,
   onConfirm
 }: Props) {
-  const [busy, setBusy] = useState(false)
-
-  async function run() {
-    setBusy(true)
-    try {
-      await onConfirm()
-      toast.success("Session cleared.")
-      onClose()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
-    }
-  }
+  const clearer = useAsyncAction(onConfirm, {
+    successMessage: "Session cleared.",
+    onSuccess: onClose
+  })
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !clearer.busy) {
+          onClose()
+        }
+      }}>
       <DialogContent>
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -75,14 +70,14 @@ export function ClearSessionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={clearer.busy}>
             Cancel
           </Button>
           <Button
             variant="destructive"
-            onClick={() => void run()}
-            disabled={busy}>
+            loading={clearer.busy}
+            onClick={() => void clearer.run()}>
             <Eraser />
             Clear
           </Button>

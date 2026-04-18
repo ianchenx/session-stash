@@ -17,6 +17,7 @@ import {
   FieldLabel
 } from "~components/ui/field"
 import { Input } from "~components/ui/input"
+import { useAsyncAction } from "~lib/use-async-action"
 
 type Props = {
   open: boolean
@@ -27,7 +28,12 @@ type Props = {
 
 export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
   const [label, setLabel] = useState("")
-  const [busy, setBusy] = useState(false)
+  const saver = useAsyncAction(
+    async (value: string) => {
+      await onSave(value)
+    },
+    { onSuccess: onClose }
+  )
 
   useEffect(() => {
     if (open) {
@@ -35,25 +41,23 @@ export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
     }
   }, [open])
 
-  async function submit() {
+  function submit() {
     const trimmed = label.trim()
     if (!trimmed) {
       toast.error("Give this account a short label.")
       return
     }
-    setBusy(true)
-    try {
-      await onSave(trimmed)
-      onClose()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
-    }
+    void saver.run(trimmed)
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !saver.busy) {
+          onClose()
+        }
+      }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Save current session</DialogTitle>
@@ -74,7 +78,7 @@ export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
               onChange={(event) => setLabel(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  void submit()
+                  submit()
                 }
               }}
             />
@@ -84,10 +88,10 @@ export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
           </Field>
         </FieldGroup>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+          <Button variant="outline" onClick={onClose} disabled={saver.busy}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={busy}>
+          <Button loading={saver.busy} onClick={submit}>
             Save
           </Button>
         </DialogFooter>

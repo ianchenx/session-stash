@@ -13,6 +13,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
 import { Input } from "~components/ui/input"
 import type { IndexEntry } from "~lib/types"
+import { useAsyncAction } from "~lib/use-async-action"
 
 type Props = {
   target: IndexEntry | null
@@ -22,13 +23,18 @@ type Props = {
 
 export function RenameDialog({ target, onClose, onRename }: Props) {
   const [label, setLabel] = useState("")
-  const [busy, setBusy] = useState(false)
+  const renamer = useAsyncAction(
+    async (id: string, value: string) => {
+      await onRename(id, value)
+    },
+    { onSuccess: onClose }
+  )
 
   useEffect(() => {
     setLabel(target?.label ?? "")
   }, [target])
 
-  async function submit() {
+  function submit() {
     if (!target) {
       return
     }
@@ -41,19 +47,17 @@ export function RenameDialog({ target, onClose, onRename }: Props) {
       onClose()
       return
     }
-    setBusy(true)
-    try {
-      await onRename(target.id, trimmed)
-      onClose()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
-    }
+    void renamer.run(target.id, trimmed)
   }
 
   return (
-    <Dialog open={target !== null} onOpenChange={(next) => !next && onClose()}>
+    <Dialog
+      open={target !== null}
+      onOpenChange={(next) => {
+        if (!next && !renamer.busy) {
+          onClose()
+        }
+      }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Rename account</DialogTitle>
@@ -71,17 +75,17 @@ export function RenameDialog({ target, onClose, onRename }: Props) {
               onChange={(event) => setLabel(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  void submit()
+                  submit()
                 }
               }}
             />
           </Field>
         </FieldGroup>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+          <Button variant="outline" onClick={onClose} disabled={renamer.busy}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={busy}>
+          <Button loading={renamer.busy} onClick={submit}>
             Save
           </Button>
         </DialogFooter>
