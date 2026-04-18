@@ -37,3 +37,6 @@ tsconfig.tsbuildinfo
 # local working docs / internal planning (not part of the open-source repo)
 HANDOFF.md
 /docs/superpowers/
+
+# scratch / intermediate artifacts
+/tmp/

@@ -46,22 +46,11 @@ Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/)
 
 ### Screenshots
 
-<table>
-  <tr>
-    <td align="center" valign="top" width="33%">
-      <img src="assets/screenshots/popup.png" width="280" alt="Popup — quick account switcher"><br>
-      <sub><b>Popup</b><br>Quick-switch accounts on the active site.</sub>
-    </td>
-    <td align="center" valign="top" width="33%">
-      <img src="assets/screenshots/sidepanel.png" width="280" alt="Side panel — browse every saved site"><br>
-      <sub><b>Side panel</b><br>Search across all saved sites.</sub>
-    </td>
-    <td align="center" valign="top" width="33%">
-      <img src="assets/screenshots/options.png" width="280" alt="Settings — Cloudflare, master password, auto-lock"><br>
-      <sub><b>Settings</b><br>Cloudflare keys, master password, auto-lock.</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="assets/store/01-hero.jpg" alt="Popup — switch accounts in one click"><br>
+  <img src="assets/store/03-sidepanel.jpg" alt="Side panel — all your accounts in one sidebar"><br>
+  <img src="assets/store/04-cloudflare.jpg" alt="Settings — your keys, your Cloudflare KV">
+</p>
 
 ### Usage
 
