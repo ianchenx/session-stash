@@ -1,8 +1,8 @@
 {
   "name": "session-stash",
   "displayName": "Session Stash",
-  "version": "0.0.1",
-  "description": "The ultimate workspace for multi-account management. Stop switching profiles or browsers—isolate your sessions directly in the tabs you’re already using.",
+  "version": "0.1.0",
+  "description": "Manage and switch multiple account sessions per site. Encrypted cookie and localStorage sync via Cloudflare KV.",
   "author": "hi@ianx.dev",
   "scripts": {
     "dev": "plasmo dev",

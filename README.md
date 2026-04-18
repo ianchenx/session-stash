@@ -1,46 +1,67 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+<div align="center">
+  <img src="assets/icon.png" width="96" alt="Session Stash">
 
-## Getting Started
+  # Session Stash
 
-First, run the development server:
+  ![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
+  ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-```bash
-pnpm dev
-# or
-npm run dev
+  English | [中文](README_CN.md)
+
+  Session Stash is a Chrome extension for managing multiple account sessions on the same website. Save your cookies and localStorage as encrypted snapshots to your own Cloudflare KV — switch identities without changing browser profiles.
+
+</div>
+
+### Install
+
+Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/) *(coming soon)*
+
+### Features
+
+- Save and switch between multiple account sessions per website
+- End-to-end encrypted — AES-GCM-256, key derived via PBKDF2-SHA256 (600k iterations)
+- Synced to your own Cloudflare KV namespace — you control the data
+- Popup for quick switching, side panel for full management
+- Auto-lock vault after configurable idle timeout
+- Conflict detection when sessions are updated from another device
+- Clear cookies and localStorage for the current site in one click
+- Toolbar badge shows the active account
+
+### How It Works
+
+```
+┌─────────────┐    snapshot    ┌──────────────┐   encrypt    ┌──────────────────┐
+│  Browser Tab │ ──────────▶  │  Background   │ ──────────▶ │  Cloudflare KV   │
+│  (cookies +  │              │  Service Worker│              │  (your namespace)│
+│  localStorage│ ◀────────── │               │ ◀────────── │                  │
+└─────────────┘    inject     └──────────────┘   decrypt    └──────────────────┘
 ```
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
+1. **Save** — Snapshots cookies and localStorage for the active tab's domain, encrypts them, and writes to KV.
+2. **Switch** — Pushes the current session back to KV (if healthy), clears the tab, injects the target session, and reloads.
+3. **Push** — Overwrites the cloud version of the active account with the current live session.
 
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
+> [!NOTE]
+> Session Stash operates per-domain — `github.com` and `mail.google.com` maintain separate account lists.
 
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
+### Screenshots
 
-## Making production build
+<!-- TODO: add screenshots -->
 
-Run the following:
+### Usage
 
-```bash
-pnpm build
-# or
-npm run build
-```
+1. Install the extension and click the Session Stash icon → **Settings**
+2. Enter your Cloudflare **Account ID**, **Namespace ID**, and **API Token**
+3. Set a master password — this encrypts all session data before it leaves the browser
+4. Navigate to any HTTPS site, click the icon, and **Save current** to capture your session
+5. Log into a different account on the same site and save it with a different label
+6. Switch between accounts with one click — the tab reloads with the new identity
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+> [!TIP]
+> Create your Cloudflare KV namespace at **Workers & Pages → KV** in the [Cloudflare dashboard](https://dash.cloudflare.com/). You'll need an API token with `Account.Workers KV Storage` read/write permission.
 
-## Submit to the webstores
+### Privacy
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
-
-## Smoke Test Checklist (manual)
-
-- [ ] CF config accepted
-- [ ] Master password initialization
-- [ ] Lock + unlock flow
-- [ ] Save first account
-- [ ] Save second account (different label)
-- [ ] Switch A → B reloads tab with new identity
-- [ ] Switch B → A reloads tab with original identity
-- [ ] Badge reflects active account
-- [ ] Delete account removes from popup and cloud
-- [ ] Overwrite with current updates cloud version
+- Your master password never leaves the browser
+- All session data is encrypted locally before being sent to Cloudflare KV
+- No telemetry, no analytics, no third-party services
