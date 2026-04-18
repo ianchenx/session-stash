@@ -13,10 +13,6 @@
   "bugs": {
     "url": "https://github.com/ianchenx/session-stash/issues"
   },
-  "engines": {
-    "node": ">=20",
-    "pnpm": ">=10"
-  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
