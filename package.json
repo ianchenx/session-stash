@@ -4,6 +4,19 @@
   "version": "0.1.0",
   "description": "Manage and switch multiple account sessions per site. Encrypted cookie and localStorage sync via Cloudflare KV.",
   "author": "hi@ianx.dev",
+  "license": "MIT",
+  "homepage": "https://github.com/ianchenx/session-stash#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ianchenx/session-stash.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ianchenx/session-stash/issues"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
