@@ -75,14 +75,11 @@ clean:                  ## Remove build artifacts
 
 VERSION := $(shell node -p "require('./package.json').version")
 
-preflight:              ## Verify clean tree, typecheck, tests pass
+preflight:              ## Verify clean tree + full check (tsc + lint + format + tests)
 	@if [ -n "$$(git status --porcelain)" ]; then \
 		echo "❌ Working tree is dirty. Commit or stash first."; exit 1; \
 	fi
-	@echo "▶ Typecheck…"
-	@pnpm exec tsc --noEmit
-	@echo "▶ Tests…"
-	@pnpm test
+	@$(MAKE) check
 	@echo "✅ Preflight passed (v$(VERSION))"
 
 version-patch:          ## Bump patch (0.1.0 → 0.1.1) + commit
@@ -120,20 +117,21 @@ release-dry:            ## Show what would be pushed (no side effects)
 	@echo "Commits to push:"
 	@git log --oneline origin/main..HEAD 2>/dev/null || echo "  (no remote tracking)"
 	@echo ""
-	@echo "This would run: git push && git push origin v$(VERSION)"
+	@echo "This would run: git push -u origin main && git push origin v$(VERSION)"
 
 release:                ## Push main + tag (Chrome Web Store submission is still manual)
 	@if ! git rev-parse "v$(VERSION)" >/dev/null 2>&1; then \
 		echo "❌ Tag v$(VERSION) does not exist. Run 'make tag' first."; exit 1; \
 	fi
 	@echo "▶ Pushing main…"
-	git push
+	git push -u origin main
 	@echo "▶ Pushing tag v$(VERSION)…"
 	git push origin "v$(VERSION)"
 	@echo "✅ Released v$(VERSION)"
 	@echo ""
 	@echo "Next: publish to Chrome Web Store (manual)"
-	@echo "  1. Download artifact from GitHub Actions → session-stash-<sha>.zip"
+	@echo "  1. Wait for CI to finish, then download session-stash-v$(VERSION).zip"
+	@echo "     from https://github.com/ianchenx/session-stash/releases/tag/v$(VERSION)"
 	@echo "  2. Chrome Web Store dashboard → Upload new package → Submit for review"
 
 # ── Help ─────────────────────────────────────────────
