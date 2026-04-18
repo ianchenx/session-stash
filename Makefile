@@ -1,10 +1,12 @@
 # Session Stash — build automation
 #
 # Quick Start:
-#   make dev        Start Plasmo dev server (loads build/chrome-mv3-dev/ in Chrome)
-#   make build      Production build
-#   make package    Zip for Web Store upload
-#   make check      Typecheck + tests
+#   make dev         Start Plasmo dev server (loads build/chrome-mv3-dev/ in Chrome)
+#   make build       Production build
+#   make package     Zip for Web Store upload
+#   make check       Typecheck + lint + tests
+#   make format      Autofix formatting (prettier)
+#   make screenshots Regenerate assets/screenshots/*.png (playwright)
 #
 # Release flow:
 #   1. make preflight                       verify clean tree + checks pass
@@ -12,8 +14,9 @@
 #   3. make tag                             create vX.Y.Z tag from package.json
 #   4. make release                         push main + tag
 
-.PHONY: help dev build package install test test-watch typecheck check clean \
-        preflight version-patch version-minor version-major tag release-dry release
+.PHONY: help dev build package install test test-watch typecheck lint format check \
+        screenshots clean preflight version-patch version-minor version-major \
+        tag release-dry release
 
 SHELL := /bin/bash
 
@@ -42,7 +45,19 @@ test-watch:             ## Run tests in watch mode
 typecheck:              ## TypeScript typecheck (no emit)
 	pnpm exec tsc --noEmit
 
-check: typecheck test   ## Typecheck + tests
+lint:                   ## Check formatting (prettier)
+	pnpm exec prettier --check . --ignore-path .gitignore
+
+format:                 ## Format all files (prettier)
+	pnpm exec prettier --write . --ignore-path .gitignore
+
+check: typecheck lint test  ## Typecheck + lint + tests
+
+# ── Screenshots ──────────────────────────────────────
+
+screenshots: build      ## Regenerate Web Store / README screenshots → assets/screenshots/
+	@echo "▶ First run? install chromium: pnpm exec playwright install chromium"
+	node scripts/screenshots/capture.mjs
 
 # ── Maintenance ──────────────────────────────────────
 
