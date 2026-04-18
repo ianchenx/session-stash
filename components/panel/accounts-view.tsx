@@ -1,11 +1,16 @@
-import { ChevronLeft, Plus, UserPlus } from "lucide-react"
+import { ChevronLeft, Eraser, MoreHorizontal, Plus, UserPlus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import type { PanelState } from "~lib/use-session-panel"
 import type { IndexEntry } from "~lib/types"
-import { Badge } from "~components/ui/badge"
 import { Button } from "~components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "~components/ui/dropdown-menu"
 import {
   Empty,
   EmptyContent,
@@ -17,6 +22,7 @@ import {
 import { ScrollArea } from "~components/ui/scroll-area"
 import { AccountRow } from "~components/panel/account-row"
 import { RenameDialog } from "~components/panel/rename-dialog"
+import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
 
 type Props = {
   panel: PanelState
@@ -26,6 +32,7 @@ type Props = {
 
 export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
   const [renameTarget, setRenameTarget] = useState<IndexEntry | null>(null)
+  const [clearOpen, setClearOpen] = useState(false)
 
   const {
     selectedDomain,
@@ -35,7 +42,8 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
     doSwitch,
     pushCurrent,
     rename,
-    remove
+    remove,
+    wipeCurrent
   } = panel
 
   if (!selectedDomain) {
@@ -43,6 +51,7 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
   }
 
   const isCurrentDomain = tab.domain === selectedDomain
+  const canClear = isCurrentDomain && Boolean(tab.id)
 
   async function handleSwitch(id: string) {
     try {
@@ -93,19 +102,35 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
             {isCurrentDomain ? " · current tab" : ""}
           </p>
         </div>
-        {isCurrentDomain && (
-          <Badge variant="outline" className="text-[10px]">
-            On this tab
-          </Badge>
-        )}
         <Button
           size="sm"
           className="h-8 shrink-0"
           disabled={!tab.domain || !tab.id}
           onClick={onSaveCurrent}>
-          <Plus className="mr-1 h-3.5 w-3.5" />
+          <Plus />
           Save
         </Button>
+        {canClear && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setClearOpen(true)}
+                className="text-destructive focus:text-destructive">
+                <Eraser className="mr-2 h-4 w-4" />
+                Clear session…
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -127,7 +152,7 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
                 <Button
                   onClick={onSaveCurrent}
                   disabled={!isCurrentDomain || !tab.id}>
-                  <Plus className="mr-1 h-4 w-4" />
+                  <Plus />
                   Save current session
                 </Button>
               </EmptyContent>
@@ -158,6 +183,14 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
           await rename(id, label)
           toast.success("Renamed.")
         }}
+      />
+
+      <ClearSessionDialog
+        open={clearOpen}
+        domain={selectedDomain}
+        hasSavedAccount={Boolean(activeIdForSelected)}
+        onClose={() => setClearOpen(false)}
+        onConfirm={wipeCurrent}
       />
     </section>
   )

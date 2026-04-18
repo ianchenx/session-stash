@@ -162,7 +162,7 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
         <div className="flex gap-2">
           {configured && isDirty && (
             <Button variant="ghost" onClick={handleReset} disabled={busy}>
-              <RotateCcw className="mr-1 h-4 w-4" />
+              <RotateCcw />
               Revert
             </Button>
           )}

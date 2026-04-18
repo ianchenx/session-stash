@@ -29,6 +29,7 @@ export type UiMsg =
   | { type: "OVERWRITE"; accountId: string; tabId: number }
   | { type: "DELETE"; accountId: string; tabId: number }
   | { type: "RENAME"; accountId: string; label: string }
+  | { type: "WIPE_CURRENT"; domain: string; tabId: number }
   | { type: "SET_LOCK_POLICY"; policy: LockPolicy }
   | { type: "GET_LOCK_POLICY" }
 

@@ -1,4 +1,3 @@
-import { ShieldCheck } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
 import "./style.css"
@@ -6,6 +5,7 @@ import "./style.css"
 import { DEFAULT_LOCK_POLICY, type LockPolicy } from "~lib/session-lock"
 import { send } from "~lib/messaging"
 import { Badge } from "~components/ui/badge"
+import { Logo } from "~components/ui/logo"
 import { Skeleton } from "~components/ui/skeleton"
 import { Toaster } from "~components/ui/sonner"
 import { CloudflareConfigCard } from "~components/cloudflare-config-card"
@@ -42,8 +42,8 @@ function Options() {
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-xl px-4 py-6">
         <header className="mb-5 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center shrink-0">
+            <Logo className="h-full w-full shadow-sm" />
           </div>
           <div className="flex-1">
             <h1 className="text-base font-semibold tracking-tight">Session Stash</h1>

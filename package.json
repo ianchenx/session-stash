@@ -1,6 +1,6 @@
 {
   "name": "session-stash",
-  "displayName": "Session stash",
+  "displayName": "Session Stash",
   "version": "0.0.1",
   "description": "The ultimate workspace for multi-account management. Stop switching profiles or browsers—isolate your sessions directly in the tabs you’re already using.",
   "author": "hi@ianx.dev",
@@ -58,7 +58,8 @@
       "tabs",
       "activeTab",
       "alarms",
-      "sidePanel"
+      "sidePanel",
+      "favicon"
     ],
     "host_permissions": [
       "https://*/*",

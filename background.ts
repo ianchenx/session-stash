@@ -381,6 +381,18 @@ async function handle(msg: UiMsg): Promise<UiResp> {
         return { ok: true }
       })
     }
+
+    case "WIPE_CURRENT": {
+      return withLock(async () => {
+        await touchLockTimer()
+        const adapter = makeAdapter(msg.domain, msg.tabId)
+        await adapter.clear()
+        await setActiveAccount(msg.domain, null)
+        await updateBadge(msg.tabId, null)
+        await adapter.reload()
+        return { ok: true }
+      })
+    }
   }
 }
 

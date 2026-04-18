@@ -1,21 +1,22 @@
 import {
   ArrowUpFromLine,
-  CheckCircle2,
+  Eraser,
   Lock,
   PanelRightOpen,
   Plus,
   RefreshCcw,
-  Settings,
-  ShieldCheck
+  Settings
 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import "./style.css"
 
+import { formatRelative } from "~lib/format"
 import { useSessionPanel } from "~lib/use-session-panel"
 import { Badge } from "~components/ui/badge"
 import { Button } from "~components/ui/button"
+import { Logo } from "~components/ui/logo"
 import {
   Empty,
   EmptyContent,
@@ -36,7 +37,9 @@ import {
 } from "~components/ui/tooltip"
 import { ConflictDialog } from "~components/panel/conflict-dialog"
 import { SaveNewDialog } from "~components/panel/save-new-dialog"
+import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
 import { PasswordInput } from "~components/password-input"
+import { SiteFavicon } from "~components/site-favicon"
 
 const POPUP_WIDTH = 360
 
@@ -62,8 +65,9 @@ async function openFullPanel() {
 function Popup() {
   const panel = useSessionPanel()
   const [saveOpen, setSaveOpen] = useState(false)
+  const [clearOpen, setClearOpen] = useState(false)
 
-  const { status, tab, conflict, dismissConflict } = panel
+  const { status, tab, conflict, dismissConflict, activeIdForSelected } = panel
 
   return (
     <div
@@ -81,7 +85,11 @@ function Popup() {
       ) : !status.unlocked ? (
         <UnlockInline onUnlock={panel.unlock} />
       ) : (
-        <Body panel={panel} onOpenSave={() => setSaveOpen(true)} />
+        <Body
+          panel={panel}
+          onOpenSave={() => setSaveOpen(true)}
+          onOpenClear={() => setClearOpen(true)}
+        />
       )}
 
       <SaveNewDialog
@@ -92,6 +100,14 @@ function Popup() {
           await panel.saveCurrentAsNew(label)
           toast.success(`Saved "${label}".`)
         }}
+      />
+
+      <ClearSessionDialog
+        open={clearOpen}
+        domain={tab.domain}
+        hasSavedAccount={Boolean(activeIdForSelected)}
+        onClose={() => setClearOpen(false)}
+        onConfirm={panel.wipeCurrent}
       />
 
       <ConflictDialog conflict={conflict} onCancel={dismissConflict} />
@@ -105,8 +121,8 @@ function Header({ panel }: { panel: ReturnType<typeof useSessionPanel> }) {
   const { status } = panel
   return (
     <header className="flex items-center gap-2 border-b px-3 py-2.5">
-      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-        <ShieldCheck className="h-3.5 w-3.5" />
+      <div className="flex h-7 w-7 items-center justify-center shrink-0">
+        <Logo className="h-full w-full shadow-sm" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold leading-none">
@@ -256,10 +272,12 @@ function UnlockInline({
 
 function Body({
   panel,
-  onOpenSave
+  onOpenSave,
+  onOpenClear
 }: {
   panel: ReturnType<typeof useSessionPanel>
   onOpenSave: () => void
+  onOpenClear: () => void
 }) {
   const {
     tab,
@@ -295,11 +313,14 @@ function Body({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <div className="min-w-0">
-          <p className="truncate text-xs uppercase tracking-wide text-muted-foreground">
-            Current site
-          </p>
-          <p className="truncate text-sm font-medium">{tab.domain}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <SiteFavicon domain={tab.domain} size={20} />
+          <div className="min-w-0">
+            <p className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+              Current site
+            </p>
+            <p className="truncate text-sm font-medium">{tab.domain}</p>
+          </div>
         </div>
         <Badge variant="secondary">
           {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
@@ -315,7 +336,7 @@ function Body({
               No accounts saved for this site yet.
             </p>
             <Button variant="outline" size="sm" onClick={onOpenSave}>
-              <Plus className="mr-1 h-3.5 w-3.5" />
+              <Plus />
               Save current session
             </Button>
           </div>
@@ -332,25 +353,19 @@ function Body({
                       : "hover:bg-muted/40"
                   }`}>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-sm font-medium">
-                        {account.label}
-                      </p>
+                    <p className="truncate text-sm font-medium">
+                      {account.label}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
                       {active && (
-                        <Badge className="h-4 bg-emerald-500 px-1.5 text-[10px] text-white hover:bg-emerald-500/90">
-                          <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" />
-                          Active
-                        </Badge>
+                        <span className="text-emerald-600">Active · </span>
                       )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      v{account.version}
+                      {formatRelative(account.updatedAt)}
                     </p>
                   </div>
                   {active ? (
                     <Button
                       size="sm"
-                      variant="outline"
                       className="h-7 text-xs"
                       onClick={async () => {
                         try {
@@ -364,7 +379,7 @@ function Body({
                           )
                         }
                       }}>
-                      <ArrowUpFromLine className="mr-1 h-3 w-3" />
+                      <ArrowUpFromLine />
                       Push
                     </Button>
                   ) : (
@@ -383,7 +398,7 @@ function Body({
                           )
                         }
                       }}>
-                      <RefreshCcw className="mr-1 h-3 w-3" />
+                      <RefreshCcw />
                       Switch
                     </Button>
                   )}
@@ -403,16 +418,17 @@ function Body({
           className="flex-1"
           disabled={!tab.id}
           onClick={onOpenSave}>
-          <Plus className="mr-1 h-3.5 w-3.5" />
+          <Plus />
           Save current
         </Button>
         <Button
-          variant="secondary"
+          variant="ghost"
           size="sm"
-          className="flex-1"
-          onClick={() => void openFullPanel()}>
-          <PanelRightOpen className="mr-1 h-3.5 w-3.5" />
-          Full panel
+          className="flex-1 text-muted-foreground hover:text-destructive"
+          disabled={!tab.id}
+          onClick={onOpenClear}>
+          <Eraser />
+          Clear
         </Button>
       </div>
     </div>

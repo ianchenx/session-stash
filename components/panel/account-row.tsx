@@ -1,6 +1,5 @@
 import {
   ArrowUpFromLine,
-  CheckCircle2,
   MoreHorizontal,
   Pencil,
   RefreshCcw,
@@ -9,9 +8,10 @@ import {
 import { useState } from "react"
 
 import { cn } from "~lib/cn"
+import { faviconUrl } from "~lib/favicon"
+import { formatRelative } from "~lib/format"
 import type { IndexEntry } from "~lib/types"
-import { Avatar, AvatarFallback } from "~components/ui/avatar"
-import { Badge } from "~components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "~components/ui/avatar"
 import { Button } from "~components/ui/button"
 import {
   DropdownMenu,
@@ -29,19 +29,6 @@ type Props = {
   onPush: () => void
   onRename: () => void
   onDelete: () => void
-}
-
-function formatRelative(ts: number): string {
-  const delta = Date.now() - ts
-  if (delta < 60_000) return "just now"
-  const minutes = Math.round(delta / 60_000)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.round(hours / 24)
-  if (days < 30) return `${days}d ago`
-  const months = Math.round(days / 30)
-  return `${months}mo ago`
 }
 
 function initialsFor(label: string): string {
@@ -74,27 +61,29 @@ export function AccountRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-lg border bg-card p-3 transition-colors",
+        "flex items-center gap-2.5 rounded-lg border bg-card p-2.5 transition-colors",
         active && "border-primary/40 bg-primary/5"
       )}>
-      <Avatar className="size-9">
-        <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-          {initialsFor(account.label)}
-        </AvatarFallback>
-      </Avatar>
+      <div className="relative shrink-0">
+        <Avatar className="size-8">
+          <AvatarImage src={faviconUrl(account.domain)} alt="" className="p-1" />
+          <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+            {initialsFor(account.label)}
+          </AvatarFallback>
+        </Avatar>
+        {active && (
+          <span
+            aria-label="Active"
+            className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-500"
+          />
+        )}
+      </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate font-medium">{account.label}</p>
-          {active && (
-            <Badge className="bg-emerald-500 text-white hover:bg-emerald-500/90">
-              <CheckCircle2 className="mr-1 h-3 w-3" />
-              Active
-            </Badge>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          v{account.version} · updated {formatRelative(account.updatedAt)}
+        <p className="truncate text-sm font-medium">{account.label}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {active && <span className="text-emerald-600">Active · </span>}
+          {formatRelative(account.updatedAt)}
         </p>
       </div>
 
@@ -102,25 +91,26 @@ export function AccountRow({
         {isCurrentDomain && !active && (
           <Button
             size="sm"
+            className="h-8"
             disabled={busy}
             onClick={() => void run(onSwitch)}>
-            <RefreshCcw className="mr-1 h-3.5 w-3.5" />
+            <RefreshCcw />
             Switch
           </Button>
         )}
         {isCurrentDomain && active && (
           <Button
             size="sm"
-            variant="outline"
+            className="h-8"
             disabled={busy}
             onClick={() => void run(onPush)}>
-            <ArrowUpFromLine className="mr-1 h-3.5 w-3.5" />
+            <ArrowUpFromLine />
             Push
           </Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" disabled={busy}>
+            <Button size="icon" variant="ghost" className="h-8 w-8" disabled={busy}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

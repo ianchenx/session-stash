@@ -270,6 +270,22 @@ export function useSessionPanel() {
     [refresh, tab]
   )
 
+  const wipeCurrent = useCallback(async () => {
+    if (!tab.id || !tab.domain) {
+      throw new Error("No supported domain in the active tab.")
+    }
+    const response = await send({
+      type: "WIPE_CURRENT",
+      domain: tab.domain,
+      tabId: tab.id
+    })
+    const error = respError(response)
+    if (error) {
+      throw new Error(error)
+    }
+    await refresh()
+  }, [refresh, tab])
+
   return {
     status,
     tab,
@@ -289,6 +305,7 @@ export function useSessionPanel() {
     doSwitch,
     rename,
     remove,
-    pushCurrent
+    pushCurrent,
+    wipeCurrent
   }
 }

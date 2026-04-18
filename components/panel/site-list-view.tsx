@@ -1,4 +1,4 @@
-import { ChevronRight, Globe, Plus, Search } from "lucide-react"
+import { ChevronRight, Plus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { cn } from "~lib/cn"
@@ -12,6 +12,7 @@ import {
 } from "~components/ui/input-group"
 import { ScrollArea } from "~components/ui/scroll-area"
 import { Separator } from "~components/ui/separator"
+import { SiteFavicon } from "~components/site-favicon"
 
 type Props = {
   panel: PanelState
@@ -74,7 +75,7 @@ export function SiteListView({ panel, onSaveCurrent }: Props) {
                   "group flex items-center gap-3 rounded-md border border-transparent px-3 py-2.5 text-left text-sm transition-colors hover:border-border hover:bg-accent/50",
                   isCurrent && "border-primary/30 bg-primary/5"
                 )}>
-                <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <SiteFavicon domain={domain} />
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate font-medium">{domain}</span>
@@ -109,7 +110,7 @@ export function SiteListView({ panel, onSaveCurrent }: Props) {
           className="w-full"
           disabled={!canSaveCurrent}
           onClick={onSaveCurrent}>
-          <Plus className="mr-1 h-4 w-4" />
+          <Plus />
           Save current tab
         </Button>
         {!canSaveCurrent && (
