@@ -46,7 +46,22 @@ Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/)
 
 ### Screenshots
 
-<!-- TODO: add screenshots -->
+<table>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/screenshots/popup.png" width="280" alt="Popup — quick account switcher"><br>
+      <sub><b>Popup</b><br>Quick-switch accounts on the active site.</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/screenshots/sidepanel.png" width="280" alt="Side panel — browse every saved site"><br>
+      <sub><b>Side panel</b><br>Search across all saved sites.</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/screenshots/options.png" width="280" alt="Settings — Cloudflare, master password, auto-lock"><br>
+      <sub><b>Settings</b><br>Cloudflare keys, master password, auto-lock.</sub>
+    </td>
+  </tr>
+</table>
 
 ### Usage
 

@@ -46,7 +46,22 @@ Chrome：[Session Stash](https://chromewebstore.google.com/detail/session-stash/
 
 ### 截图
 
-<!-- TODO: 添加截图 -->
+<table>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/screenshots/popup.png" width="280" alt="弹窗 — 当前站点账号快速切换"><br>
+      <sub><b>弹窗</b><br>当前网站账号一键切换。</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/screenshots/sidepanel.png" width="280" alt="侧边栏 — 查看所有已保存网站"><br>
+      <sub><b>侧边栏</b><br>搜索并管理所有已保存网站。</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/screenshots/options.png" width="280" alt="设置 — Cloudflare、主密码、自动锁定"><br>
+      <sub><b>设置</b><br>Cloudflare 配置、主密码、自动锁定策略。</sub>
+    </td>
+  </tr>
+</table>
 
 ### 使用方法
 
