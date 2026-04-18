@@ -4,7 +4,8 @@
 #   make dev         Start Plasmo dev server (loads build/chrome-mv3-dev/ in Chrome)
 #   make build       Production build
 #   make package     Zip for Web Store upload
-#   make check       Typecheck + lint + tests
+#   make check       Typecheck + prettier check + biome lint + tests
+#   make lint        Lint (biome)
 #   make format      Autofix formatting (prettier)
 #   make screenshots Regenerate assets/screenshots/*.png (playwright)
 #
@@ -14,9 +15,9 @@
 #   3. make tag                             create vX.Y.Z tag from package.json
 #   4. make release                         push main + tag
 
-.PHONY: help dev build package install test test-watch typecheck lint format check \
-        screenshots clean preflight version-patch version-minor version-major \
-        tag release-dry release
+.PHONY: help dev build package install test test-watch typecheck lint format-check \
+        format check screenshots clean preflight version-patch version-minor \
+        version-major tag release-dry release
 
 SHELL := /bin/bash
 
@@ -45,13 +46,16 @@ test-watch:             ## Run tests in watch mode
 typecheck:              ## TypeScript typecheck (no emit)
 	pnpm exec tsc --noEmit
 
-lint:                   ## Check formatting (prettier)
+format-check:           ## Check formatting (prettier)
 	pnpm exec prettier --check . --ignore-path .gitignore
+
+lint:                   ## Lint source code (biome)
+	pnpm exec biome lint
 
 format:                 ## Format all files (prettier)
 	pnpm exec prettier --write . --ignore-path .gitignore
 
-check: typecheck lint test  ## Typecheck + lint + tests
+check: typecheck format-check lint test  ## Typecheck + prettier check + biome lint + tests
 
 # ── Screenshots ──────────────────────────────────────
 

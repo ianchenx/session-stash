@@ -37,6 +37,7 @@
     "tldts": "^7.0.28"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.12",
     "@ianvs/prettier-plugin-sort-imports": "4.1.1",
     "@types/chrome": "0.0.258",
     "@types/node": "20.11.5",
