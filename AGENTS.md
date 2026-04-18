@@ -24,7 +24,7 @@ ones:
 ## Release flow
 
 ```
-make preflight                        # clean tree + typecheck + tests
+make preflight                        # clean tree + full check (tsc + lint + tests)
 make version-{patch|minor|major}      # bumps package.json, commits
 make tag                              # creates vX.Y.Z tag
 make release                          # pushes main + tag
@@ -33,6 +33,9 @@ make release                          # pushes main + tag
 Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds the
 extension, renames the artifact to `session-stash-vX.Y.Z.zip`, and publishes a
 GitHub Release with auto-generated notes.
+
+**Do not** run `gh release create` manually — the workflow does it. A manual
+release with the same tag will cause the workflow to fail.
 
 Web Store submission is still **manual** — download the zip from the Release
 page and upload it at <https://chrome.google.com/webstore/devconsole/>. The
