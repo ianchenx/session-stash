@@ -13,11 +13,8 @@ import { SiteListView } from "~components/panel/site-list-view"
 import { UnlockGate } from "~components/panel/unlock-gate"
 
 function openSettings() {
-  try {
-    chrome.runtime.openOptionsPage()
-  } catch {
-    chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
-  }
+  // See popup.tsx: openOptionsPage is async and silently no-ops in Dia.
+  void chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
 }
 
 function SidePanel() {

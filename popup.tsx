@@ -44,11 +44,11 @@ import { SiteFavicon } from "~components/site-favicon"
 const POPUP_WIDTH = 360
 
 function openSettings() {
-  try {
-    chrome.runtime.openOptionsPage()
-  } catch {
-    chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
-  }
+  // chrome.runtime.openOptionsPage() is async and silently no-ops on some
+  // Chromium forks (e.g. Dia); its rejection can't be caught synchronously.
+  // Open a plain tab instead — works everywhere because options_ui is set.
+  void chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
+  window.close()
 }
 
 async function openFullPanel() {
