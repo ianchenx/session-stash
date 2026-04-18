@@ -2,7 +2,7 @@ import { AlertTriangle, Lock, Unlock } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { respError, send } from "~lib/messaging"
+import { PasswordInput } from "~components/password-input"
 import { Alert, AlertDescription, AlertTitle } from "~components/ui/alert"
 import { Button } from "~components/ui/button"
 import {
@@ -13,8 +13,13 @@ import {
   CardHeader,
   CardTitle
 } from "~components/ui/card"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "~components/ui/field"
-import { PasswordInput } from "~components/password-input"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel
+} from "~components/ui/field"
+import { respError, send } from "~lib/messaging"
 
 type Status = {
   cfConfigured: boolean
@@ -117,7 +122,8 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Cloudflare config required</AlertTitle>
             <AlertDescription>
-              Save your Cloudflare credentials above before initializing the vault.
+              Save your Cloudflare credentials above before initializing the
+              vault.
             </AlertDescription>
           </Alert>
         )}
@@ -182,8 +188,8 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
             <div className="flex-1">
               <p className="font-medium">Vault unlocked</p>
               <p className="text-muted-foreground text-xs">
-                The session key is cached until your auto-lock policy triggers or you
-                lock manually.
+                The session key is cached until your auto-lock policy triggers
+                or you lock manually.
               </p>
             </div>
           </div>

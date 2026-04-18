@@ -1,10 +1,8 @@
-import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import * as React from "react"
 
-import { useIsMobile } from "~hooks/use-mobile"
-import { cn } from "~lib/cn"
 import { Button } from "~components/ui/button"
 import { Input } from "~components/ui/input"
 import { Separator } from "~components/ui/separator"
@@ -13,15 +11,17 @@ import {
   SheetContent,
   SheetDescription,
   SheetHeader,
-  SheetTitle,
+  SheetTitle
 } from "~components/ui/sheet"
 import { Skeleton } from "~components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
+  TooltipTrigger
 } from "~components/ui/tooltip"
+import { useIsMobile } from "~hooks/use-mobile"
+import { cn } from "~lib/cn"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -128,7 +128,7 @@ const SidebarProvider = React.forwardRef<
         isMobile,
         openMobile,
         setOpenMobile,
-        toggleSidebar,
+        toggleSidebar
       }),
       [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
@@ -141,7 +141,7 @@ const SidebarProvider = React.forwardRef<
               {
                 "--sidebar-width": SIDEBAR_WIDTH,
                 "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-                ...style,
+                ...style
               } as React.CSSProperties
             }
             className={cn(
@@ -149,8 +149,7 @@ const SidebarProvider = React.forwardRef<
               className
             )}
             ref={ref}
-            {...props}
-          >
+            {...props}>
             {children}
           </div>
         </TooltipProvider>
@@ -189,8 +188,7 @@ const Sidebar = React.forwardRef<
             className
           )}
           ref={ref}
-          {...props}
-        >
+          {...props}>
           {children}
         </div>
       )
@@ -205,11 +203,10 @@ const Sidebar = React.forwardRef<
             className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
             style={
               {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                "--sidebar-width": SIDEBAR_WIDTH_MOBILE
               } as React.CSSProperties
             }
-            side={side}
-          >
+            side={side}>
             <SheetHeader className="sr-only">
               <SheetTitle>Sidebar</SheetTitle>
               <SheetDescription>Displays the mobile sidebar.</SheetDescription>
@@ -227,8 +224,7 @@ const Sidebar = React.forwardRef<
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
-        data-side={side}
-      >
+        data-side={side}>
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
@@ -252,12 +248,10 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
-          {...props}
-        >
+          {...props}>
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
-          >
+            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow">
             {children}
           </div>
         </div>
@@ -284,8 +278,7 @@ const SidebarTrigger = React.forwardRef<
         onClick?.(event)
         toggleSidebar()
       }}
-      {...props}
-    >
+      {...props}>
       <PanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
@@ -526,18 +519,18 @@ const sidebarMenuButtonVariants = cva(
       variant: {
         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         outline:
-          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]"
       },
       size: {
         default: "h-8 text-sm",
         sm: "h-7 text-xs",
-        lg: "h-12 text-sm group-data-[collapsible=icon]:!p-0",
-      },
+        lg: "h-12 text-sm group-data-[collapsible=icon]:!p-0"
+      }
     },
     defaultVariants: {
       variant: "default",
-      size: "default",
-    },
+      size: "default"
+    }
   }
 )
 
@@ -581,7 +574,7 @@ const SidebarMenuButton = React.forwardRef<
 
     if (typeof tooltip === "string") {
       tooltip = {
-        children: tooltip,
+        children: tooltip
       }
     }
 
@@ -668,8 +661,7 @@ const SidebarMenuSkeleton = React.forwardRef<
       ref={ref}
       data-sidebar="menu-skeleton"
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
-      {...props}
-    >
+      {...props}>
       {showIcon && (
         <Skeleton
           className="size-4 rounded-md"
@@ -681,7 +673,7 @@ const SidebarMenuSkeleton = React.forwardRef<
         data-sidebar="menu-skeleton-text"
         style={
           {
-            "--skeleton-width": width,
+            "--skeleton-width": width
           } as React.CSSProperties
         }
       />
@@ -767,5 +759,5 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
-  useSidebar,
+  useSidebar
 }

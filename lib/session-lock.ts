@@ -47,7 +47,9 @@ export async function clearSessionKey(): Promise<void> {
 
 export async function getLockPolicy(): Promise<LockPolicy> {
   const result = await chrome.storage.local.get(LOCK_POLICY_KEY)
-  return (result[LOCK_POLICY_KEY] as LockPolicy | undefined) ?? DEFAULT_LOCK_POLICY
+  return (
+    (result[LOCK_POLICY_KEY] as LockPolicy | undefined) ?? DEFAULT_LOCK_POLICY
+  )
 }
 
 export async function setLockPolicy(policy: LockPolicy): Promise<void> {

@@ -7,10 +7,6 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 
-import { cn } from "~lib/cn"
-import { faviconUrl } from "~lib/favicon"
-import { formatRelative } from "~lib/format"
-import type { IndexEntry } from "~lib/types"
 import { Avatar, AvatarFallback, AvatarImage } from "~components/ui/avatar"
 import { Button } from "~components/ui/button"
 import {
@@ -20,6 +16,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "~components/ui/dropdown-menu"
+import { cn } from "~lib/cn"
+import { faviconUrl } from "~lib/favicon"
+import { formatRelative } from "~lib/format"
+import type { IndexEntry } from "~lib/types"
 
 type Props = {
   account: IndexEntry
@@ -66,13 +66,18 @@ export function AccountRow({
       )}>
       <div className="relative shrink-0">
         <Avatar className="size-8">
-          <AvatarImage src={faviconUrl(account.domain)} alt="" className="p-1" />
+          <AvatarImage
+            src={faviconUrl(account.domain)}
+            alt=""
+            className="p-1"
+          />
           <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
             {initialsFor(account.label)}
           </AvatarFallback>
         </Avatar>
         {active && (
           <span
+            role="status"
             aria-label="Active"
             className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-500"
           />
@@ -110,7 +115,11 @@ export function AccountRow({
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="h-8 w-8" disabled={busy}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              disabled={busy}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

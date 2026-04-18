@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 
-import type { CriticalKeys, SerializedCookie } from "../types"
 import {
   checkHealth,
   clearCookies,
@@ -10,6 +9,7 @@ import {
   snapshotCookies,
   snapshotLocalStorage
 } from "../session"
+import type { CriticalKeys, SerializedCookie } from "../types"
 
 type ChromeCookie = {
   name: string
@@ -70,7 +70,9 @@ function mockCookies(initial: ChromeCookie[] = []) {
               cookie.name === details.name &&
               cookie.path === parsed.pathname &&
               parsed.hostname.endsWith(
-                cookie.domain.startsWith(".") ? cookie.domain.slice(1) : cookie.domain
+                cookie.domain.startsWith(".")
+                  ? cookie.domain.slice(1)
+                  : cookie.domain
               )
             )
         )
@@ -214,7 +216,9 @@ function mockScripting(behavior: (script: Script) => unknown) {
       async executeScript(script: Script) {
         calls.push(script)
         const result = behavior(script)
-        return [{ result, frameId: 0 }] as chrome.scripting.InjectionResult<unknown>[]
+        return [
+          { result, frameId: 0 }
+        ] as chrome.scripting.InjectionResult<unknown>[]
       }
     }
   } as typeof chrome

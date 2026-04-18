@@ -2,7 +2,6 @@ import { AlertTriangle } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import type { PendingConflict } from "~lib/use-session-panel"
 import { Button } from "~components/ui/button"
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "~components/ui/dialog"
+import type { PendingConflict } from "~lib/use-session-panel"
 
 type Props = {
   conflict: PendingConflict | null
@@ -36,7 +36,9 @@ export function ConflictDialog({ conflict, onCancel }: Props) {
   }
 
   return (
-    <Dialog open={conflict !== null} onOpenChange={(next) => !next && onCancel()}>
+    <Dialog
+      open={conflict !== null}
+      onOpenChange={(next) => !next && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -58,12 +60,12 @@ export function ConflictDialog({ conflict, onCancel }: Props) {
               <span className="font-mono">{conflict.info.accountId}</span>
             </p>
             <p>
-              <span className="text-muted-foreground">Local version:</span>{" "}
-              v{conflict.info.localVersion}
+              <span className="text-muted-foreground">Local version:</span> v
+              {conflict.info.localVersion}
             </p>
             <p>
-              <span className="text-muted-foreground">Remote version:</span>{" "}
-              v{conflict.info.remoteVersion}
+              <span className="text-muted-foreground">Remote version:</span> v
+              {conflict.info.remoteVersion}
             </p>
           </div>
         )}

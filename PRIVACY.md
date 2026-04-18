@@ -67,17 +67,17 @@ snapshots**. There is no recovery path, by design.
 
 ## Permissions and why they exist
 
-| Permission | Use |
-|---|---|
-| `cookies` | Read and write cookies for the active site to save/restore sessions |
-| `storage` | Persist the encrypted vault and settings locally |
-| `scripting` | Inject a small script to read and write `localStorage` on the active tab |
-| `tabs` / `activeTab` | Determine the current site and act only on the tab you invoke the extension from |
-| `alarms` | Auto-lock the vault after an idle timeout you configure |
-| `sidePanel` | Render the management UI in the browser side panel |
-| `favicon` | Display site icons in the account list |
-| Host `https://*/*` | Required to read and write cookies and localStorage on any HTTPS site you choose to manage |
-| Host `https://api.cloudflare.com/*` | Sync encrypted session data to your own Cloudflare KV |
+| Permission                          | Use                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| `cookies`                           | Read and write cookies for the active site to save/restore sessions                        |
+| `storage`                           | Persist the encrypted vault and settings locally                                           |
+| `scripting`                         | Inject a small script to read and write `localStorage` on the active tab                   |
+| `tabs` / `activeTab`                | Determine the current site and act only on the tab you invoke the extension from           |
+| `alarms`                            | Auto-lock the vault after an idle timeout you configure                                    |
+| `sidePanel`                         | Render the management UI in the browser side panel                                         |
+| `favicon`                           | Display site icons in the account list                                                     |
+| Host `https://*/*`                  | Required to read and write cookies and localStorage on any HTTPS site you choose to manage |
+| Host `https://api.cloudflare.com/*` | Sync encrypted session data to your own Cloudflare KV                                      |
 
 ## Changes to this policy
 

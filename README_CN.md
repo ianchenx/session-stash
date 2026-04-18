@@ -1,20 +1,20 @@
 <div align="center">
   <img src="assets/icon.png" width="96" alt="Session Stash">
 
-  # Session Stash
+# Session Stash
 
-  ![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
-  ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-  [English](README.md) | 中文
+[English](README.md) | 中文
 
-  Session Stash 是一个 Chrome 扩展，用于管理同一网站上的多个账号会话。将 Cookie 和 localStorage 作为加密快照保存到你自己的 Cloudflare KV — 无需切换浏览器配置文件即可切换身份。
+Session Stash 是一个 Chrome 扩展，用于管理同一网站上的多个账号会话。将 Cookie 和 localStorage 作为加密快照保存到你自己的 Cloudflare KV — 无需切换浏览器配置文件即可切换身份。
 
 </div>
 
 ### 安装
 
-Chrome：[Session Stash](https://chromewebstore.google.com/detail/session-stash/) *（即将上架）*
+Chrome：[Session Stash](https://chromewebstore.google.com/detail/session-stash/) _（即将上架）_
 
 ### 功能
 

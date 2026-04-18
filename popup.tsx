@@ -12,11 +12,13 @@ import { toast } from "sonner"
 
 import "./style.css"
 
-import { formatRelative } from "~lib/format"
-import { useSessionPanel } from "~lib/use-session-panel"
+import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
+import { ConflictDialog } from "~components/panel/conflict-dialog"
+import { SaveNewDialog } from "~components/panel/save-new-dialog"
+import { PasswordInput } from "~components/password-input"
+import { SiteFavicon } from "~components/site-favicon"
 import { Badge } from "~components/ui/badge"
 import { Button } from "~components/ui/button"
-import { Logo } from "~components/ui/logo"
 import {
   Empty,
   EmptyContent,
@@ -26,6 +28,7 @@ import {
   EmptyTitle
 } from "~components/ui/empty"
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
+import { Logo } from "~components/ui/logo"
 import { ScrollArea } from "~components/ui/scroll-area"
 import { Separator } from "~components/ui/separator"
 import { Toaster } from "~components/ui/sonner"
@@ -35,11 +38,8 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "~components/ui/tooltip"
-import { ConflictDialog } from "~components/panel/conflict-dialog"
-import { SaveNewDialog } from "~components/panel/save-new-dialog"
-import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
-import { PasswordInput } from "~components/password-input"
-import { SiteFavicon } from "~components/site-favicon"
+import { formatRelative } from "~lib/format"
+import { useSessionPanel } from "~lib/use-session-panel"
 
 const POPUP_WIDTH = 360
 
@@ -133,7 +133,11 @@ function Header({ panel }: { panel: ReturnType<typeof useSessionPanel> }) {
           Session Stash
         </p>
         <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-          {status?.unlocked ? "Unlocked" : status?.initialized ? "Locked" : "Not set up"}
+          {status?.unlocked
+            ? "Unlocked"
+            : status?.initialized
+              ? "Locked"
+              : "Not set up"}
         </p>
       </div>
       <TooltipProvider delayDuration={200}>
@@ -203,7 +207,9 @@ function SetupGate({
           <EmptyMedia variant="icon">
             <Settings className="h-5 w-5" />
           </EmptyMedia>
-          <EmptyTitle>{needsCf ? "Configure Cloudflare" : "Initialize vault"}</EmptyTitle>
+          <EmptyTitle>
+            {needsCf ? "Configure Cloudflare" : "Initialize vault"}
+          </EmptyTitle>
           <EmptyDescription>
             {needsCf
               ? "Paste your Cloudflare Account ID, namespace, and API token in settings to start."
@@ -302,12 +308,14 @@ function Body({
           <EmptyHeader>
             <EmptyTitle>Unsupported tab</EmptyTitle>
             <EmptyDescription>
-              The active tab is not an HTTPS website. Open the side panel to manage
-              all saved sites.
+              The active tab is not an HTTPS website. Open the side panel to
+              manage all saved sites.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button onClick={() => void openFullPanel()}>Open side panel</Button>
+            <Button onClick={() => void openFullPanel()}>
+              Open side panel
+            </Button>
           </EmptyContent>
         </Empty>
       </div>

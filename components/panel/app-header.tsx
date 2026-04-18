@@ -1,6 +1,5 @@
 import { Lock, Settings, Unlock } from "lucide-react"
 
-import type { Status } from "~lib/use-session-panel"
 import { Badge } from "~components/ui/badge"
 import { Button } from "~components/ui/button"
 import { Logo } from "~components/ui/logo"
@@ -10,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "~components/ui/tooltip"
+import type { Status } from "~lib/use-session-panel"
 
 type Props = {
   status: Status | null

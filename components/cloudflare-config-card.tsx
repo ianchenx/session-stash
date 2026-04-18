@@ -2,8 +2,7 @@ import { ExternalLink, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { respError, send } from "~lib/messaging"
-import type { CfConfig } from "~lib/types"
+import { PasswordInput } from "~components/password-input"
 import { Button } from "~components/ui/button"
 import {
   Card,
@@ -13,8 +12,14 @@ import {
   CardHeader,
   CardTitle
 } from "~components/ui/card"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "~components/ui/field"
-import { PasswordInput } from "~components/password-input"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel
+} from "~components/ui/field"
+import { respError, send } from "~lib/messaging"
+import type { CfConfig } from "~lib/types"
 
 type Props = {
   configured: boolean
@@ -43,6 +48,7 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
     setForm(EMPTY)
   }, [])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reload when parent reports config changed
   useEffect(() => {
     void loadSaved()
   }, [loadSaved, configured])
@@ -142,9 +148,9 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
               disabled={loading}
             />
             <FieldDescription>
-              Use <strong>My Profile → API Tokens</strong> to create a token limited
-              to <em>Workers KV Storage: Edit</em> on that namespace only. Click the
-              eye icon above to reveal the value you have saved.
+              Use <strong>My Profile → API Tokens</strong> to create a token
+              limited to <em>Workers KV Storage: Edit</em> on that namespace
+              only. Click the eye icon above to reveal the value you have saved.
             </FieldDescription>
           </Field>
         </FieldGroup>
@@ -166,9 +172,7 @@ export function CloudflareConfigCard({ configured, onSaved }: Props) {
               Revert
             </Button>
           )}
-          <Button
-            onClick={handleSave}
-            disabled={busy || loading || !isDirty}>
+          <Button onClick={handleSave} disabled={busy || loading || !isDirty}>
             {configured ? "Save changes" : "Save"}
           </Button>
         </div>

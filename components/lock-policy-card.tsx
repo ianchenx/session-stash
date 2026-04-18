@@ -2,12 +2,6 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import {
-  describeLockPolicy,
-  TIMEOUT_OPTIONS,
-  type LockPolicy
-} from "~lib/session-lock"
-import { respError, send } from "~lib/messaging"
-import {
   Card,
   CardContent,
   CardDescription,
@@ -15,6 +9,12 @@ import {
   CardTitle
 } from "~components/ui/card"
 import { ToggleGroup, ToggleGroupItem } from "~components/ui/toggle-group"
+import { respError, send } from "~lib/messaging"
+import {
+  describeLockPolicy,
+  TIMEOUT_OPTIONS,
+  type LockPolicy
+} from "~lib/session-lock"
 
 type Props = {
   policy: LockPolicy

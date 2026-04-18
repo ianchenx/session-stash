@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import type { IndexEntry } from "~lib/types"
 import { Button } from "~components/ui/button"
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
 } from "~components/ui/dialog"
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
 import { Input } from "~components/ui/input"
+import type { IndexEntry } from "~lib/types"
 
 type Props = {
   target: IndexEntry | null

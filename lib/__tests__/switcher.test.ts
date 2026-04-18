@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { CfKvClient } from "../cf-kv"
 import { initializeMeta, loadAccount, loadIndex } from "../account"
+import { CfKvClient } from "../cf-kv"
 import {
   deleteAccountFlow,
   overwriteWithCurrent,

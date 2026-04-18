@@ -1,8 +1,7 @@
 import { ChevronRight, Plus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { cn } from "~lib/cn"
-import type { PanelState } from "~lib/use-session-panel"
+import { SiteFavicon } from "~components/site-favicon"
 import { Badge } from "~components/ui/badge"
 import { Button } from "~components/ui/button"
 import {
@@ -12,7 +11,8 @@ import {
 } from "~components/ui/input-group"
 import { ScrollArea } from "~components/ui/scroll-area"
 import { Separator } from "~components/ui/separator"
-import { SiteFavicon } from "~components/site-favicon"
+import { cn } from "~lib/cn"
+import type { PanelState } from "~lib/use-session-panel"
 
 type Props = {
   panel: PanelState
@@ -60,7 +60,9 @@ export function SiteListView({ panel, onSaveCurrent }: Props) {
         <nav className="flex flex-col gap-1 p-2">
           {filtered.length === 0 && (
             <p className="px-2 py-8 text-center text-xs text-muted-foreground">
-              {query ? "No matches." : "No sites yet. Open an HTTPS tab and save its session."}
+              {query
+                ? "No matches."
+                : "No sites yet. Open an HTTPS tab and save its session."}
             </p>
           )}
           {filtered.map(({ domain, count }) => {
@@ -81,6 +83,7 @@ export function SiteListView({ panel, onSaveCurrent }: Props) {
                     <span className="truncate font-medium">{domain}</span>
                     {hasActive && (
                       <span
+                        role="status"
                         aria-label="Active account"
                         className="h-1.5 w-1.5 rounded-full bg-emerald-500"
                       />

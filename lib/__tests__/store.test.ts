@@ -9,7 +9,11 @@ function mockChrome() {
       local: {
         async get(keys: string | string[] | null) {
           const selectedKeys =
-            keys === null ? Object.keys(data) : Array.isArray(keys) ? keys : [keys]
+            keys === null
+              ? Object.keys(data)
+              : Array.isArray(keys)
+                ? keys
+                : [keys]
           const out: Record<string, unknown> = {}
           for (const key of selectedKeys) {
             if (key in data) {

@@ -4,7 +4,7 @@
 // state. Read via window.__SCREENSHOT_FIXTURE__ which the harness sets on
 // the query string (#scenario=<name>).
 
-(() => {
+;(() => {
   const url = new URL(location.href)
   const scenario = url.searchParams.get("scenario") || "popup"
 
@@ -38,19 +38,97 @@
 
   const SITE_LIST_ACCOUNTS = [
     ...CHATGPT_ACCOUNTS,
-    { id: "acc-claude-1", domain: "claude.ai", label: "Primary", version: 12, updatedAt: NOW - 1000 * 60 * 45 },
-    { id: "acc-claude-2", domain: "claude.ai", label: "Max plan", version: 5, updatedAt: NOW - 1000 * 60 * 60 * 30 },
-    { id: "acc-gh-work", domain: "github.com", label: "Work · acme-corp", version: 7, updatedAt: NOW - 1000 * 60 * 42 },
-    { id: "acc-gh-personal", domain: "github.com", label: "Personal", version: 3, updatedAt: NOW - 1000 * 60 * 60 * 6 },
-    { id: "acc-linear-1", domain: "linear.app", label: "Acme", version: 8, updatedAt: NOW - 1000 * 60 * 60 * 2 },
-    { id: "acc-vercel-1", domain: "vercel.com", label: "Team", version: 6, updatedAt: NOW - 1000 * 60 * 60 * 9 },
-    { id: "acc-figma-1", domain: "figma.com", label: "Design org", version: 4, updatedAt: NOW - 1000 * 60 * 60 * 24 },
-    { id: "acc-notion-1", domain: "notion.so", label: "Work", version: 11, updatedAt: NOW - 1000 * 60 * 25 },
-    { id: "acc-notion-2", domain: "notion.so", label: "Personal", version: 2, updatedAt: NOW - 1000 * 60 * 60 * 72 },
-    { id: "acc-x-1", domain: "x.com", label: "@ianwrites", version: 4, updatedAt: NOW - 1000 * 60 * 60 * 18 },
-    { id: "acc-gmail-1", domain: "mail.google.com", label: "Work", version: 6, updatedAt: NOW - 1000 * 60 * 55 },
-    { id: "acc-gmail-2", domain: "mail.google.com", label: "Personal", version: 2, updatedAt: NOW - 1000 * 60 * 60 * 22 },
-    { id: "acc-stripe-1", domain: "stripe.com", label: "Acme live", version: 3, updatedAt: NOW - 1000 * 60 * 60 * 5 }
+    {
+      id: "acc-claude-1",
+      domain: "claude.ai",
+      label: "Primary",
+      version: 12,
+      updatedAt: NOW - 1000 * 60 * 45
+    },
+    {
+      id: "acc-claude-2",
+      domain: "claude.ai",
+      label: "Max plan",
+      version: 5,
+      updatedAt: NOW - 1000 * 60 * 60 * 30
+    },
+    {
+      id: "acc-gh-work",
+      domain: "github.com",
+      label: "Work · acme-corp",
+      version: 7,
+      updatedAt: NOW - 1000 * 60 * 42
+    },
+    {
+      id: "acc-gh-personal",
+      domain: "github.com",
+      label: "Personal",
+      version: 3,
+      updatedAt: NOW - 1000 * 60 * 60 * 6
+    },
+    {
+      id: "acc-linear-1",
+      domain: "linear.app",
+      label: "Acme",
+      version: 8,
+      updatedAt: NOW - 1000 * 60 * 60 * 2
+    },
+    {
+      id: "acc-vercel-1",
+      domain: "vercel.com",
+      label: "Team",
+      version: 6,
+      updatedAt: NOW - 1000 * 60 * 60 * 9
+    },
+    {
+      id: "acc-figma-1",
+      domain: "figma.com",
+      label: "Design org",
+      version: 4,
+      updatedAt: NOW - 1000 * 60 * 60 * 24
+    },
+    {
+      id: "acc-notion-1",
+      domain: "notion.so",
+      label: "Work",
+      version: 11,
+      updatedAt: NOW - 1000 * 60 * 25
+    },
+    {
+      id: "acc-notion-2",
+      domain: "notion.so",
+      label: "Personal",
+      version: 2,
+      updatedAt: NOW - 1000 * 60 * 60 * 72
+    },
+    {
+      id: "acc-x-1",
+      domain: "x.com",
+      label: "@ianwrites",
+      version: 4,
+      updatedAt: NOW - 1000 * 60 * 60 * 18
+    },
+    {
+      id: "acc-gmail-1",
+      domain: "mail.google.com",
+      label: "Work",
+      version: 6,
+      updatedAt: NOW - 1000 * 60 * 55
+    },
+    {
+      id: "acc-gmail-2",
+      domain: "mail.google.com",
+      label: "Personal",
+      version: 2,
+      updatedAt: NOW - 1000 * 60 * 60 * 22
+    },
+    {
+      id: "acc-stripe-1",
+      domain: "stripe.com",
+      label: "Acme live",
+      version: 3,
+      updatedAt: NOW - 1000 * 60 * 60 * 5
+    }
   ]
 
   const FIXTURES = {
@@ -142,7 +220,9 @@
     },
     tabs: {
       query() {
-        return Promise.resolve([{ id: fx.tab.id, url: fx.tab.url, windowId: 1 }])
+        return Promise.resolve([
+          { id: fx.tab.id, url: fx.tab.url, windowId: 1 }
+        ])
       },
       create(info) {
         return Promise.resolve({ id: 2, ...info })
@@ -157,19 +237,33 @@
     },
     storage: {
       local: {
-        get() { return Promise.resolve({}) },
-        set() { return Promise.resolve() },
-        remove() { return Promise.resolve() }
+        get() {
+          return Promise.resolve({})
+        },
+        set() {
+          return Promise.resolve()
+        },
+        remove() {
+          return Promise.resolve()
+        }
       },
       session: {
-        get() { return Promise.resolve({}) },
-        set() { return Promise.resolve() },
-        remove() { return Promise.resolve() }
+        get() {
+          return Promise.resolve({})
+        },
+        set() {
+          return Promise.resolve()
+        },
+        remove() {
+          return Promise.resolve()
+        }
       }
     },
     alarms: {
       create() {},
-      clear() { return Promise.resolve(true) }
+      clear() {
+        return Promise.resolve(true)
+      }
     }
   }
 
@@ -201,7 +295,10 @@
         return origDescriptor.get.call(this)
       },
       set(value) {
-        if (typeof value === "string" && value.includes("chrome-extension://")) {
+        if (
+          typeof value === "string" &&
+          value.includes("chrome-extension://")
+        ) {
           try {
             const parsed = new URL(value)
             const pageUrl = parsed.searchParams.get("pageUrl")

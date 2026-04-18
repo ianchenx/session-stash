@@ -13,7 +13,12 @@ export function SiteFavicon({
   const [failed, setFailed] = useState(false)
 
   if (failed) {
-    return <Globe style={{ width: size, height: size }} className="shrink-0 text-muted-foreground" />
+    return (
+      <Globe
+        style={{ width: size, height: size }}
+        className="shrink-0 text-muted-foreground"
+      />
+    )
   }
 
   return (

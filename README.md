@@ -1,20 +1,20 @@
 <div align="center">
   <img src="assets/icon.png" width="96" alt="Session Stash">
 
-  # Session Stash
+# Session Stash
 
-  ![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
-  ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-  English | [中文](README_CN.md)
+English | [中文](README_CN.md)
 
-  Session Stash is a Chrome extension for managing multiple account sessions on the same website. Save your cookies and localStorage as encrypted snapshots to your own Cloudflare KV — switch identities without changing browser profiles.
+Session Stash is a Chrome extension for managing multiple account sessions on the same website. Save your cookies and localStorage as encrypted snapshots to your own Cloudflare KV — switch identities without changing browser profiles.
 
 </div>
 
 ### Install
 
-Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/) *(coming soon)*
+Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/) _(coming soon)_
 
 ### Features
 

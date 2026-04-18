@@ -3,14 +3,14 @@ import { toast } from "sonner"
 
 import "./style.css"
 
-import { useSessionPanel } from "~lib/use-session-panel"
-import { Toaster } from "~components/ui/sonner"
 import { AccountsView } from "~components/panel/accounts-view"
 import { AppHeader } from "~components/panel/app-header"
 import { ConflictDialog } from "~components/panel/conflict-dialog"
 import { SaveNewDialog } from "~components/panel/save-new-dialog"
 import { SiteListView } from "~components/panel/site-list-view"
 import { UnlockGate } from "~components/panel/unlock-gate"
+import { Toaster } from "~components/ui/sonner"
+import { useSessionPanel } from "~lib/use-session-panel"
 
 function openSettings() {
   // See popup.tsx: openOptionsPage is async and silently no-ops in Dia.
@@ -21,7 +21,14 @@ function SidePanel() {
   const panel = useSessionPanel()
   const [saveOpen, setSaveOpen] = useState(false)
 
-  const { status, tab, conflict, dismissConflict, selectedDomain, setSelectedDomain } = panel
+  const {
+    status,
+    tab,
+    conflict,
+    dismissConflict,
+    selectedDomain,
+    setSelectedDomain
+  } = panel
 
   const openSaveDialog = () => {
     if (!tab.domain || !tab.id) {

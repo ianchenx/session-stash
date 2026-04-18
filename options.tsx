@@ -2,15 +2,15 @@ import { useCallback, useEffect, useState } from "react"
 
 import "./style.css"
 
-import { DEFAULT_LOCK_POLICY, type LockPolicy } from "~lib/session-lock"
-import { send } from "~lib/messaging"
+import { CloudflareConfigCard } from "~components/cloudflare-config-card"
+import { LockPolicyCard } from "~components/lock-policy-card"
+import { MasterPasswordCard } from "~components/master-password-card"
 import { Badge } from "~components/ui/badge"
 import { Logo } from "~components/ui/logo"
 import { Skeleton } from "~components/ui/skeleton"
 import { Toaster } from "~components/ui/sonner"
-import { CloudflareConfigCard } from "~components/cloudflare-config-card"
-import { LockPolicyCard } from "~components/lock-policy-card"
-import { MasterPasswordCard } from "~components/master-password-card"
+import { send } from "~lib/messaging"
+import { DEFAULT_LOCK_POLICY, type LockPolicy } from "~lib/session-lock"
 
 type Status = {
   cfConfigured: boolean
@@ -46,7 +46,9 @@ function Options() {
             <Logo className="h-full w-full shadow-sm" />
           </div>
           <div className="flex-1">
-            <h1 className="text-base font-semibold tracking-tight">Session Stash</h1>
+            <h1 className="text-base font-semibold tracking-tight">
+              Session Stash
+            </h1>
             <p className="text-xs text-muted-foreground">
               Settings · keys, credentials, auto-lock
             </p>

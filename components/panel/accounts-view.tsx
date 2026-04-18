@@ -1,9 +1,16 @@
-import { ChevronLeft, Eraser, MoreHorizontal, Plus, UserPlus } from "lucide-react"
+import {
+  ChevronLeft,
+  Eraser,
+  MoreHorizontal,
+  Plus,
+  UserPlus
+} from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import type { PanelState } from "~lib/use-session-panel"
-import type { IndexEntry } from "~lib/types"
+import { AccountRow } from "~components/panel/account-row"
+import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
+import { RenameDialog } from "~components/panel/rename-dialog"
 import { Button } from "~components/ui/button"
 import {
   DropdownMenu,
@@ -20,9 +27,8 @@ import {
   EmptyTitle
 } from "~components/ui/empty"
 import { ScrollArea } from "~components/ui/scroll-area"
-import { AccountRow } from "~components/panel/account-row"
-import { RenameDialog } from "~components/panel/rename-dialog"
-import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
+import type { IndexEntry } from "~lib/types"
+import type { PanelState } from "~lib/use-session-panel"
 
 type Props = {
   panel: PanelState

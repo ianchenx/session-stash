@@ -55,16 +55,21 @@ export function ClearSessionDialog({
           <DialogDescription>
             {hasSavedAccount ? (
               <>
-                Reloads <span className="font-medium">{domain ?? "this site"}</span>{" "}
-                with no cookies or local storage, so you can log in as another user.{" "}
-                <span className="font-medium">Push any unsaved changes first</span> —
-                clearing doesn&apos;t sync your current state to the cloud.
+                Reloads{" "}
+                <span className="font-medium">{domain ?? "this site"}</span>{" "}
+                with no cookies or local storage, so you can log in as another
+                user.{" "}
+                <span className="font-medium">
+                  Push any unsaved changes first
+                </span>{" "}
+                — clearing doesn&apos;t sync your current state to the cloud.
               </>
             ) : (
               <>
-                Reloads <span className="font-medium">{domain ?? "this site"}</span>{" "}
-                with no cookies or local storage, so you can log in as another user.
-                Nothing here is saved; your current session will be gone.
+                Reloads{" "}
+                <span className="font-medium">{domain ?? "this site"}</span>{" "}
+                with no cookies or local storage, so you can log in as another
+                user. Nothing here is saved; your current session will be gone.
               </>
             )}
           </DialogDescription>

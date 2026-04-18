@@ -9,13 +9,17 @@ const config = {
 }
 
 function mockFetch(
-  responses: Array<{ status?: number; ok?: boolean; body?: ArrayBuffer | string }>
+  responses: Array<{
+    status?: number
+    ok?: boolean
+    body?: ArrayBuffer | string
+  }>
 ) {
   let index = 0
   const fn = vi.fn(async (_url: string, _init?: RequestInit) => {
     const response = responses[index]
     index += 1
-    const ok = response.ok ?? ((response.status ?? 200) < 400)
+    const ok = response.ok ?? (response.status ?? 200) < 400
     const body = response.body
 
     return {

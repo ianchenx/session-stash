@@ -1,11 +1,3 @@
-import type {
-  Account,
-  ConflictInfo,
-  ConflictResolution,
-  Index,
-  SessionSnapshot
-} from "./types"
-import { CfKvClient } from "./cf-kv"
 import {
   deleteAccount,
   loadAccount,
@@ -13,7 +5,15 @@ import {
   saveAccount,
   saveIndex
 } from "./account"
+import { CfKvClient } from "./cf-kv"
 import { checkHealth } from "./session"
+import type {
+  Account,
+  ConflictInfo,
+  ConflictResolution,
+  Index,
+  SessionSnapshot
+} from "./types"
 
 export type SaveAsNewAccountArgs = {
   client: CfKvClient
@@ -96,7 +96,9 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
   const { client, key, adapter, fromAccountId, toAccountId } = args
 
   const index = await loadIndex(client, key)
-  const fromEntry = index.accounts.find((account) => account.id === fromAccountId)
+  const fromEntry = index.accounts.find(
+    (account) => account.id === fromAccountId
+  )
   const toEntry = index.accounts.find((account) => account.id === toAccountId)
   if (!toEntry) {
     throw new Error(`target account ${toAccountId} not found`)
@@ -157,7 +159,11 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
       const nextIndex: Index = {
         accounts: index.accounts.map((entry) =>
           entry.id === fromAccountId
-            ? { ...entry, version: newFromVersion!, updatedAt: updated.updatedAt }
+            ? {
+                ...entry,
+                version: newFromVersion!,
+                updatedAt: updated.updatedAt
+              }
             : entry
         ),
         updatedAt: Date.now()
@@ -298,7 +304,9 @@ export async function renameAccount(args: RenameArgs): Promise<void> {
 
   const next: Index = {
     accounts: index.accounts.map((entry) =>
-      entry.id === accountId ? { ...entry, label: trimmed, updatedAt: now } : entry
+      entry.id === accountId
+        ? { ...entry, label: trimmed, updatedAt: now }
+        : entry
     ),
     updatedAt: now
   }

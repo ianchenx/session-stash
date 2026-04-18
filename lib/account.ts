@@ -1,13 +1,4 @@
-import type { Account, Index, Meta } from "./types"
-
 import { CfKvClient } from "./cf-kv"
-import {
-  KV_KEY_ACCOUNT_PREFIX,
-  KV_KEY_INDEX,
-  KV_KEY_META,
-  SCHEMA_VERSION,
-  VERIFIER_PLAINTEXT
-} from "./types"
 import {
   base64ToBytes,
   bytesToBase64,
@@ -16,6 +7,14 @@ import {
   encrypt,
   randomSalt
 } from "./crypto"
+import type { Account, Index, Meta } from "./types"
+import {
+  KV_KEY_ACCOUNT_PREFIX,
+  KV_KEY_INDEX,
+  KV_KEY_META,
+  SCHEMA_VERSION,
+  VERIFIER_PLAINTEXT
+} from "./types"
 
 export async function isInitialized(client: CfKvClient): Promise<boolean> {
   const raw = await client.get(KV_KEY_META)

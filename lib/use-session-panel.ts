@@ -28,7 +28,9 @@ export type PanelState = ReturnType<typeof useSessionPanel>
 export function useSessionPanel() {
   const [status, setStatus] = useState<Status | null>(null)
   const [accounts, setAccounts] = useState<IndexEntry[]>([])
-  const [activeByDomain, setActiveByDomain] = useState<Record<string, string>>({})
+  const [activeByDomain, setActiveByDomain] = useState<Record<string, string>>(
+    {}
+  )
   const [tab, setTab] = useState<Tab>({ id: null, url: null, domain: null })
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
   const [conflict, setConflict] = useState<PendingConflict | null>(null)
@@ -123,7 +125,7 @@ export function useSessionPanel() {
   )
 
   const activeIdForSelected = selectedDomain
-    ? (activeByDomain[selectedDomain] ?? null)
+    ? activeByDomain[selectedDomain] ?? null
     : null
 
   const unlock = useCallback(

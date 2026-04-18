@@ -2,7 +2,7 @@ import { ArrowRight, KeyRound, Settings2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import type { Status } from "~lib/use-session-panel"
+import { PasswordInput } from "~components/password-input"
 import { Button } from "~components/ui/button"
 import {
   Empty,
@@ -13,7 +13,7 @@ import {
   EmptyTitle
 } from "~components/ui/empty"
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
-import { PasswordInput } from "~components/password-input"
+import type { Status } from "~lib/use-session-panel"
 
 type Props = {
   status: Status

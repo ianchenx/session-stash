@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest"
 
-import { CfKvClient } from "../cf-kv"
 import {
   deleteAccount,
   initializeMeta,
@@ -11,6 +10,7 @@ import {
   saveIndex,
   unlock
 } from "../account"
+import { CfKvClient } from "../cf-kv"
 import type { Account } from "../types"
 
 function mockClient(): CfKvClient & { store: Map<string, Uint8Array> } {

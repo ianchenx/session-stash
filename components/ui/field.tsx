@@ -1,11 +1,11 @@
 "use client"
 
-import { useMemo } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { useMemo } from "react"
 
-import { cn } from "~lib/cn"
 import { Label } from "~components/ui/label"
 import { Separator } from "~components/ui/separator"
+import { cn } from "~lib/cn"
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
@@ -63,18 +63,18 @@ const fieldVariants = cva(
         horizontal: [
           "flex-row items-center",
           "[&>[data-slot=field-label]]:flex-auto",
-          "has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px has-[>[data-slot=field-content]]:items-start",
+          "has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px has-[>[data-slot=field-content]]:items-start"
         ],
         responsive: [
           "@md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>*]:w-auto flex-col [&>*]:w-full [&>.sr-only]:w-auto",
           "@md/field-group:[&>[data-slot=field-label]]:flex-auto",
-          "@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
-        ],
-      },
+          "@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px"
+        ]
+      }
     },
     defaultVariants: {
-      orientation: "vertical",
-    },
+      orientation: "vertical"
+    }
   }
 )
 
@@ -168,14 +168,12 @@ function FieldSeparator({
         "relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2",
         className
       )}
-      {...props}
-    >
+      {...props}>
       <Separator className="absolute inset-0 top-1/2" />
       {children && (
         <span
           className="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
-          data-slot="field-separator-content"
-        >
+          data-slot="field-separator-content">
           {children}
         </span>
       )}
@@ -223,8 +221,7 @@ function FieldError({
       role="alert"
       data-slot="field-error"
       className={cn("text-destructive text-sm font-normal", className)}
-      {...props}
-    >
+      {...props}>
       {content}
     </div>
   )
@@ -240,5 +237,5 @@ export {
   FieldSeparator,
   FieldSet,
   FieldContent,
-  FieldTitle,
+  FieldTitle
 }

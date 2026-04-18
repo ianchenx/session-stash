@@ -5,7 +5,7 @@ import {
   Info,
   LoaderCircle,
   OctagonX,
-  TriangleAlert,
+  TriangleAlert
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
@@ -24,7 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         info: <Info className="h-4 w-4" />,
         warning: <TriangleAlert className="h-4 w-4" />,
         error: <OctagonX className="h-4 w-4" />,
-        loading: <LoaderCircle className="h-4 w-4 animate-spin" />,
+        loading: <LoaderCircle className="h-4 w-4 animate-spin" />
       }}
       toastOptions={{
         classNames: {
@@ -34,8 +34,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-        },
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground"
+        }
       }}
       {...props}
     />

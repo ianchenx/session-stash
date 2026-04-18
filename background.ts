@@ -1,11 +1,14 @@
-import {
-  initializeMeta,
-  isInitialized,
-  loadIndex,
-  unlock
-} from "./lib/account"
+import { initializeMeta, isInitialized, loadIndex, unlock } from "./lib/account"
 import { CfKvClient } from "./lib/cf-kv"
 import type { UiMsg, UiResp } from "./lib/messages"
+import {
+  clearCookies,
+  clearLocalStorage,
+  injectCookies,
+  injectLocalStorage,
+  snapshotCookies,
+  snapshotLocalStorage
+} from "./lib/session"
 import {
   cancelAutoLock,
   clearSessionKey,
@@ -17,14 +20,6 @@ import {
   setLockPolicy,
   type LockPolicy
 } from "./lib/session-lock"
-import {
-  clearCookies,
-  clearLocalStorage,
-  injectCookies,
-  injectLocalStorage,
-  snapshotCookies,
-  snapshotLocalStorage
-} from "./lib/session"
 import {
   getActiveAccount,
   getAllActiveAccounts,

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Render popup / sidepanel / options against a mocked chrome.* and snap PNGs
 // into assets/screenshots/. Run with `node scripts/screenshots/capture.mjs`.
-
 import { createReadStream, statSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { createServer } from "node:http"
@@ -101,19 +100,18 @@ async function capture(baseUrl, scenario) {
   await page.goto(url, { waitUntil: "domcontentloaded" })
   await scenario.wait(page)
   // Wait for every <img> to finish loading (or error out) so favicons are in.
-  await page.evaluate(
-    () =>
-      Promise.all(
-        Array.from(document.images)
-          .filter((img) => !img.complete)
-          .map(
-            (img) =>
-              new Promise((resolve) => {
-                img.addEventListener("load", resolve, { once: true })
-                img.addEventListener("error", resolve, { once: true })
-              })
-          )
-      )
+  await page.evaluate(() =>
+    Promise.all(
+      Array.from(document.images)
+        .filter((img) => !img.complete)
+        .map(
+          (img) =>
+            new Promise((resolve) => {
+              img.addEventListener("load", resolve, { once: true })
+              img.addEventListener("error", resolve, { once: true })
+            })
+        )
+    )
   )
   // Let sonner / shadow / layout settle
   await page.waitForTimeout(500)

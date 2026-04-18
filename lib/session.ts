@@ -64,7 +64,10 @@ export async function injectCookies(
     try {
       await chrome.cookies.set(details)
     } catch (error) {
-      console.warn(`cookie inject failed: ${cookie.name}@${cookie.domain}`, error)
+      console.warn(
+        `cookie inject failed: ${cookie.name}@${cookie.domain}`,
+        error
+      )
     }
   }
 }
