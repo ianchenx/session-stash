@@ -746,6 +746,63 @@ describe("background SET_CF_CONFIG", () => {
     expect(after.unlocked).toBe(false)
   })
 
+  it("does not lock when no previous config is present", async () => {
+    const chromeApi = mockChrome()
+
+    let currentCfg: typeof cfConfig | null = { ...cfConfig }
+    const getCfConfig = vi.fn(async () => currentCfg)
+    const setCfConfig = vi.fn(async (c: typeof cfConfig) => {
+      currentCfg = c
+    })
+    const clearSessionKey = vi.fn(async () => undefined)
+    const key = {} as CryptoKey
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => null),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig,
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      loadMeta: vi.fn(),
+      unlock: vi.fn(async () => key),
+      validateSchemaVersion: vi.fn()
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount: vi.fn(async () => "new-id"),
+      switchAccount: vi.fn()
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey,
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    currentCfg = null
+    const response = await sendMessage(listener, {
+      type: "SET_CF_CONFIG",
+      cfg: { accountId: "new-acc", namespaceId: "new-ns", apiToken: "tok" }
+    })
+    expect(response).toEqual({ ok: true })
+    expect(clearSessionKey).not.toHaveBeenCalled()
+  })
+
   it("keeps vault unlocked when only apiToken changes", async () => {
     const chromeApi = mockChrome()
 
