@@ -65,7 +65,16 @@ export async function saveAsNewAccount(
     ],
     updatedAt: now
   }
-  await saveIndex(client, key, next)
+  try {
+    await saveIndex(client, key, next)
+  } catch (error) {
+    try {
+      await deleteAccount(client, account.id)
+    } catch {
+      // best-effort rollback; an orphan blob is preferable to a ghost index entry
+    }
+    throw error
+  }
   return account.id
 }
 
