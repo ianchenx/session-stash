@@ -56,6 +56,19 @@ export async function unlock(
   }
 
   const meta = JSON.parse(new TextDecoder().decode(raw)) as Meta
+  if (typeof meta.schemaVersion !== "number") {
+    throw new Error("meta is corrupted: schemaVersion missing or invalid")
+  }
+  if (meta.schemaVersion > SCHEMA_VERSION) {
+    throw new Error(
+      `vault schema v${meta.schemaVersion} is newer than this extension supports (v${SCHEMA_VERSION}); please update the extension`
+    )
+  }
+  if (meta.schemaVersion < SCHEMA_VERSION) {
+    throw new Error(
+      `vault schema v${meta.schemaVersion} is older than supported (v${SCHEMA_VERSION}); migration not implemented`
+    )
+  }
   const salt = base64ToBytes(meta.salt)
   const key = await deriveMasterKey(password, salt)
   const verifierCipher = base64ToBytes(meta.verifier)
