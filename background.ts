@@ -202,9 +202,15 @@ async function withLock<T>(fn: () => Promise<T>): Promise<T> {
   }
 
   const promise = fn()
-  switchLock = promise.finally(() => {
+  const tracker = promise.finally(() => {
     switchLock = null
   })
+  tracker.catch(() => {
+    // Rejections flow out through `promise` to the caller; this no-op handler
+    // exists so the lock tracker itself never surfaces as an unhandled rejection
+    // when no subsequent withLock() waits on it.
+  })
+  switchLock = tracker
   return promise
 }
 
