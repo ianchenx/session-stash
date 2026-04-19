@@ -38,7 +38,7 @@ function Options() {
       <div className="mx-auto max-w-xl px-4 py-6">
         <header className="mb-5 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center shrink-0">
-            <Logo className="h-full w-full shadow-sm" />
+            <Logo className="h-full w-full shadow-sm dark:shadow-none" />
           </div>
           <div className="flex-1">
             <h1 className="text-base font-semibold tracking-tight">

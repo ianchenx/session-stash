@@ -24,7 +24,7 @@ export function AppHeader({ status, onLock, onOpenSettings }: Props) {
   return (
     <header className="flex items-center gap-3 border-b bg-background/80 px-4 py-3 backdrop-blur">
       <div className="flex h-8 w-8 items-center justify-center shrink-0">
-        <Logo className="h-full w-full shadow-sm" />
+        <Logo className="h-full w-full shadow-sm dark:shadow-none" />
       </div>
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-sm font-semibold tracking-tight">

@@ -17,7 +17,12 @@ export function Logo({
       xmlns="http://www.w3.org/2000/svg"
       className={cn("h-full w-full", className)}>
       {withBackground && (
-        <rect width="100" height="100" rx="22" fill={warmCream} />
+        <rect
+          width="100"
+          height="100"
+          rx="22"
+          className="fill-[#F7F4EA] dark:fill-transparent"
+        />
       )}
       <g stroke={terracotta} strokeWidth="6" strokeLinejoin="round">
         <rect x="22" y="32" width="48" height="36" rx="4" opacity="0.35" />
