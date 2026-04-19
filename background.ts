@@ -354,6 +354,9 @@ async function handle(msg: UiMsg): Promise<UiResp> {
               throw Object.assign(new Error("conflict"), { conflict: info })
             }
           })
+          if (result.conflictResolution === "cancel") {
+            return { ok: true, kind: "cancelled" }
+          }
           await setActiveAccount(msg.domain, msg.toId)
           const toLabel = result.toAccount.label
           const sourceTab = await chrome.tabs.get(msg.tabId)

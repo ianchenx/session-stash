@@ -65,6 +65,7 @@ export type UiResp =
       syncedTabCount: number
     }
   | { ok: true; kind: "conflict"; info: ConflictInfo }
+  | { ok: true; kind: "cancelled" }
   | { ok: true; kind: "lock-policy"; policy: LockPolicy }
   | { ok: true; kind: "cf-config"; config: CfConfig | null }
 
