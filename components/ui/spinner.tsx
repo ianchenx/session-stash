@@ -18,7 +18,8 @@ export function Spinner({ className }: Props) {
 
 export function CenteredSpinner({ className }: Props) {
   return (
-    <div className={cn("flex flex-1 items-center justify-center p-6", className)}>
+    <div
+      className={cn("flex flex-1 items-center justify-center p-6", className)}>
       <Spinner className="size-5 text-muted-foreground" />
     </div>
   )

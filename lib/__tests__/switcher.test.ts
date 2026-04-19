@@ -91,10 +91,7 @@ describe("switcher.saveAsNewAccount", () => {
     }
 
     const originalPut = client.put.bind(client)
-    ;(client as unknown as { put: CfKvClient["put"] }).put = async (
-      k,
-      v
-    ) => {
+    ;(client as unknown as { put: CfKvClient["put"] }).put = async (k, v) => {
       if (k === "index") {
         throw new Error("index put failed")
       }
@@ -519,10 +516,7 @@ describe("switcher.overwriteWithCurrent", () => {
     })
 
     const originalPut = client.put.bind(client)
-    ;(client as unknown as { put: CfKvClient["put"] }).put = async (
-      k,
-      v
-    ) => {
+    ;(client as unknown as { put: CfKvClient["put"] }).put = async (k, v) => {
       if (k === "index") {
         throw new Error("index put failed")
       }
@@ -538,7 +532,6 @@ describe("switcher.overwriteWithCurrent", () => {
       throw new Error("blob was unexpectedly deleted on update rollback")
     }
     expect(Array.from(blobAfter)).toEqual(Array.from(snapshotOfBlobBefore))
-
     ;(client as unknown as { put: CfKvClient["put"] }).put = originalPut
     const { loadAccount } = await import("../account")
     const restored = await loadAccount(client, key, accountA.id)

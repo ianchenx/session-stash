@@ -149,9 +149,7 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
                 active={account.id === activeIdForSelected}
                 isCurrentDomain={isCurrentDomain}
                 busy={pendingId === account.id}
-                disabledOthers={
-                  pendingId !== null && pendingId !== account.id
-                }
+                disabledOthers={pendingId !== null && pendingId !== account.id}
                 onSwitch={() =>
                   void runWithPending(account.id, () => doSwitch(account.id))
                 }

@@ -24,12 +24,10 @@ type Props = {
 
 export function UnlockGate({ status, onUnlock, onOpenSettings }: Props) {
   const [password, setPassword] = useState("")
-  const unlocker = useAsyncAction(
-    async (pw: string) => {
-      await onUnlock(pw)
-      setPassword("")
-    }
-  )
+  const unlocker = useAsyncAction(async (pw: string) => {
+    await onUnlock(pw)
+    setPassword("")
+  })
 
   if (!status.cfConfigured) {
     return (

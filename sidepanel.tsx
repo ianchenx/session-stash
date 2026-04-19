@@ -9,8 +9,8 @@ import { ConflictDialog } from "~components/panel/conflict-dialog"
 import { SaveNewDialog } from "~components/panel/save-new-dialog"
 import { SiteListView } from "~components/panel/site-list-view"
 import { UnlockGate } from "~components/panel/unlock-gate"
-import { CenteredSpinner } from "~components/ui/spinner"
 import { Toaster } from "~components/ui/sonner"
+import { CenteredSpinner } from "~components/ui/spinner"
 import { useSessionPanel } from "~lib/use-session-panel"
 
 function openSettings() {

@@ -67,10 +67,7 @@ describe("account.meta", () => {
       salt: "AAAA",
       verifier: "BBBB"
     }
-    client.store.set(
-      "meta",
-      new TextEncoder().encode(JSON.stringify(meta))
-    )
+    client.store.set("meta", new TextEncoder().encode(JSON.stringify(meta)))
     await expect(unlock(client, "pw")).rejects.toThrow(
       /newer than this extension supports/
     )
@@ -82,13 +79,8 @@ describe("account.meta", () => {
       salt: "AAAA",
       verifier: "BBBB"
     }
-    client.store.set(
-      "meta",
-      new TextEncoder().encode(JSON.stringify(meta))
-    )
-    await expect(unlock(client, "pw")).rejects.toThrow(
-      /older than supported/
-    )
+    client.store.set("meta", new TextEncoder().encode(JSON.stringify(meta)))
+    await expect(unlock(client, "pw")).rejects.toThrow(/older than supported/)
   })
 
   it("unlock rejects a meta whose schemaVersion is not a number", async () => {
@@ -97,10 +89,7 @@ describe("account.meta", () => {
       salt: "AAAA",
       verifier: "BBBB"
     }
-    client.store.set(
-      "meta",
-      new TextEncoder().encode(JSON.stringify(meta))
-    )
+    client.store.set("meta", new TextEncoder().encode(JSON.stringify(meta)))
     await expect(unlock(client, "pw")).rejects.toThrow(
       /schemaVersion missing or invalid/
     )
