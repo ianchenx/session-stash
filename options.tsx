@@ -5,6 +5,7 @@ import "./style.css"
 import { CloudflareConfigCard } from "~components/cloudflare-config-card"
 import { LockPolicyCard } from "~components/lock-policy-card"
 import { MasterPasswordCard } from "~components/master-password-card"
+import { ThemeCard } from "~components/theme-card"
 import { Badge } from "~components/ui/badge"
 import { Logo } from "~components/ui/logo"
 import { Skeleton } from "~components/ui/skeleton"
@@ -64,6 +65,7 @@ function Options() {
               disabled={!status.initialized}
               onChanged={refresh}
             />
+            <ThemeCard />
           </div>
         )}
 
