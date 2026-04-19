@@ -36,7 +36,7 @@ export function AppHeader({ status, onLock, onOpenSettings }: Props) {
       </div>
 
       {status?.unlocked ? (
-        <Badge className="bg-emerald-500 text-white hover:bg-emerald-500/90">
+        <Badge className="bg-success text-success-foreground hover:bg-success/90">
           <Unlock className="mr-0.5 h-3 w-3" />
           Unlocked
         </Badge>

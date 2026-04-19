@@ -72,7 +72,7 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center gap-2">
           {status.unlocked ? (
-            <Unlock className="h-4 w-4 text-emerald-500" />
+            <Unlock className="h-4 w-4 text-success" />
           ) : (
             <Lock className="h-4 w-4 text-muted-foreground" />
           )}
@@ -149,8 +149,8 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
         )}
 
         {status.unlocked && (
-          <div className="flex items-center gap-3 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm">
-            <Unlock className="h-4 w-4 text-emerald-500" />
+          <div className="flex items-center gap-3 rounded-md border border-success/20 bg-success/5 p-3 text-sm">
+            <Unlock className="h-4 w-4 text-success" />
             <div className="flex-1">
               <p className="font-medium">Vault unlocked</p>
               <p className="text-muted-foreground text-xs">

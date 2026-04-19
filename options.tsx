@@ -96,7 +96,7 @@ function StatusPills({ status }: { status: VaultStatus | null }) {
         variant={status.unlocked ? "default" : "outline"}
         className={
           status.unlocked
-            ? "bg-emerald-500 text-white hover:bg-emerald-500/90"
+            ? "bg-success text-success-foreground hover:bg-success/90"
             : ""
         }>
         {status.unlocked ? "Unlocked" : "Locked"}

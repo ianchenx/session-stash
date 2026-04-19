@@ -85,7 +85,7 @@ export function SiteListView({ panel, onSaveCurrent }: Props) {
                       <span
                         role="status"
                         aria-label="Active account"
-                        className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                        className="h-1.5 w-1.5 rounded-full bg-success"
                       />
                     )}
                   </div>

@@ -375,7 +375,7 @@ function Body({
                     </p>
                     <p className="truncate text-[11px] text-muted-foreground">
                       {active && (
-                        <span className="text-emerald-600">Active · </span>
+                        <span className="text-success">Active · </span>
                       )}
                       {formatRelative(account.updatedAt)}
                     </p>

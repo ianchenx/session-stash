@@ -74,7 +74,7 @@ export function AccountRow({
           <span
             role="status"
             aria-label="Active"
-            className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-500"
+            className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-success"
           />
         )}
       </div>
@@ -82,7 +82,7 @@ export function AccountRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{account.label}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {active && <span className="text-emerald-600">Active · </span>}
+          {active && <span className="text-success">Active · </span>}
           {formatRelative(account.updatedAt)}
         </p>
       </div>
