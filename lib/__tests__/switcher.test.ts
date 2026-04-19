@@ -221,7 +221,8 @@ describe("switcher.switchAccount", () => {
       key,
       adapter,
       fromAccountId: accountA.id,
-      toAccountId: "B"
+      toAccountId: "B",
+      localFromVersion: accountA.version
     })
 
     expect(adapter.calls).toEqual(["snapshot", "clear", "inject", "reload"])
@@ -340,7 +341,8 @@ describe("switcher.switchAccount", () => {
         key,
         adapter,
         fromAccountId: accountA.id,
-        toAccountId: "B"
+        toAccountId: "B",
+        localFromVersion: accountA.version
       })
     ).rejects.toThrow(/inject failed/)
     expect(adapter.live.cookies[0].value).toBe("A-live")

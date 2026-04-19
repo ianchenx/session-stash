@@ -122,7 +122,12 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
   let conflictResolution: ConflictResolution | null = null
 
   if (health === "OK" && fromAccount && fromEntry) {
-    const localVersion = args.localFromVersion ?? fromEntry.version
+    if (args.localFromVersion === undefined) {
+      throw new Error(
+        `switchAccount: localFromVersion is required when fromAccount is present (id=${fromAccountId})`
+      )
+    }
+    const localVersion = args.localFromVersion
     if (localVersion < fromEntry.version) {
       if (!args.onConflict) {
         throw new Error(

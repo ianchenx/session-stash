@@ -191,13 +191,18 @@ export function useSessionPanel() {
         throw new Error("No supported domain in the active tab.")
       }
       const activeId = activeByDomain[tab.domain] ?? null
+      const activeEntry = activeId
+        ? accounts.find((account) => account.id === activeId) ?? null
+        : null
+      const localFromVersion =
+        opts?.localFromVersion ?? activeEntry?.version ?? undefined
       const response = await send({
         type: "SWITCH",
         domain: tab.domain,
         fromId: activeId,
         toId,
         tabId: tab.id,
-        localFromVersion: opts?.localFromVersion,
+        localFromVersion,
         resolution: opts?.resolution
       })
 
@@ -234,7 +239,7 @@ export function useSessionPanel() {
       }
       await refresh()
     },
-    [activeByDomain, refresh, tab]
+    [accounts, activeByDomain, refresh, tab]
   )
 
   const rename = useCallback(
