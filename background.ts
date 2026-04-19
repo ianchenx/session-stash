@@ -320,6 +320,14 @@ async function handle(msg: UiMsg): Promise<UiResp> {
         await touchLockTimer()
         const adapter = makeAdapter(msg.domain, msg.tabId)
         const snapshot = await adapter.snapshot()
+        if (
+          snapshot.cookies.length === 0 &&
+          Object.keys(snapshot.localStorage).length === 0
+        ) {
+          throw new Error(
+            "Nothing to save: the current tab has no cookies or localStorage. Make sure the page has finished loading and you are signed in."
+          )
+        }
         const id = await saveAsNewAccount({
           client,
           key,
