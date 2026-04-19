@@ -126,39 +126,70 @@ async function updateBadge(tabId: number, label: string | null): Promise<void> {
   }
 }
 
-async function findSameDomainTabs(domain: string): Promise<number[]> {
-  const tabs = await chrome.tabs.query({
-    url: [`*://*.${domain}/*`, `*://${domain}/*`]
-  })
-  const matchingTabs = tabs.filter(
-    (tab): tab is chrome.tabs.Tab & { id: number; url: string } =>
-      !tab.incognito && tab.id !== undefined && typeof tab.url === "string"
-  )
+function getOrigin(url: string): string | null {
+  try {
+    return new URL(url).origin
+  } catch {
+    return null
+  }
+}
 
-  return matchingTabs
-    .filter((tab) => getETLDPlusOne(tab.url) === domain)
-    .map((tab) => tab.id)
+type SyncTarget = {
+  id: number
+  origin: string
+}
+
+async function findSameDomainTabs(domain: string): Promise<SyncTarget[]> {
+  const tabs = await chrome.tabs.query({
+    url: [`https://*.${domain}/*`, `https://${domain}/*`]
+  })
+
+  return tabs.flatMap((tab) => {
+    if (tab.incognito || tab.id === undefined || typeof tab.url !== "string") {
+      return []
+    }
+
+    if (getETLDPlusOne(tab.url) !== domain) {
+      return []
+    }
+
+    const origin = getOrigin(tab.url)
+    if (!origin?.startsWith("https://")) {
+      return []
+    }
+
+    return [{ id: tab.id, origin }]
+  })
 }
 
 async function syncOtherTabs(
-  tabIds: number[],
+  tabs: SyncTarget[],
+  sourceOrigin: string,
   localStorage: SessionSnapshot["localStorage"],
   label: string
 ): Promise<number> {
-  if (tabIds.length === 0) {
+  if (tabs.length === 0) {
     return 0
   }
 
-  await Promise.allSettled(tabIds.map((tabId) => clearLocalStorage(tabId)))
-  await Promise.allSettled(
-    tabIds.map((tabId) => injectLocalStorage(tabId, localStorage))
-  )
-  const reloadResults = await Promise.allSettled(
-    tabIds.map((tabId) => chrome.tabs.reload(tabId))
-  )
-  await Promise.allSettled(tabIds.map((tabId) => updateBadge(tabId, label)))
+  const results = await Promise.all(
+    tabs.map(async (tab) => {
+      try {
+        if (tab.origin === sourceOrigin) {
+          await clearLocalStorage(tab.id)
+          await injectLocalStorage(tab.id, localStorage)
+        }
 
-  return reloadResults.filter((result) => result.status === "fulfilled").length
+        await chrome.tabs.reload(tab.id)
+        await updateBadge(tab.id, label)
+        return true
+      } catch {
+        return false
+      }
+    })
+  )
+
+  return results.filter(Boolean).length
 }
 
 async function withLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -325,14 +356,24 @@ async function handle(msg: UiMsg): Promise<UiResp> {
           })
           await setActiveAccount(msg.domain, msg.toId)
           const toLabel = result.toAccount.label
-          const otherTabIds = (await findSameDomainTabs(msg.domain)).filter(
-            (tabId) => tabId !== msg.tabId
-          )
-          const syncedTabCount = await syncOtherTabs(
-            otherTabIds,
-            result.toAccount.localStorage,
-            toLabel
-          )
+          const sourceTab = await chrome.tabs.get(msg.tabId)
+          const sourceOrigin =
+            typeof sourceTab.url === "string" ? getOrigin(sourceTab.url) : null
+          const otherTabs =
+            sourceOrigin === null
+              ? []
+              : (await findSameDomainTabs(msg.domain)).filter(
+                  (tab) => tab.id !== msg.tabId
+                )
+          const syncedTabCount =
+            sourceOrigin === null
+              ? 0
+              : await syncOtherTabs(
+                  otherTabs,
+                  sourceOrigin,
+                  result.toAccount.localStorage,
+                  toLabel
+                )
           await updateBadge(msg.tabId, toLabel)
           return {
             ok: true,

@@ -15,6 +15,7 @@ function mockChrome() {
   const alarmsCreate = vi.fn()
   const alarmsClear = vi.fn(async () => true)
   const tabsQuery = vi.fn(async (_queryInfo?: chrome.tabs.QueryInfo) => [])
+  const tabsGet = vi.fn(async (_tabId: number) => ({ id: 0, url: "" }))
   const tabsReload = vi.fn(async (_tabId?: number) => undefined)
 
   ;(globalThis as typeof globalThis & { chrome: typeof chrome }).chrome = {
@@ -33,6 +34,7 @@ function mockChrome() {
       setBadgeBackgroundColor
     },
     tabs: {
+      get: tabsGet,
       query: tabsQuery,
       reload: tabsReload
     },
@@ -64,6 +66,7 @@ function mockChrome() {
     },
     setBadgeText,
     setBadgeBackgroundColor,
+    tabsGet,
     tabsQuery,
     tabsReload,
     alarmsCreate,
@@ -173,12 +176,17 @@ describe("background SWITCH", () => {
 
   it("syncs other same-domain tabs and returns the synced count", async () => {
     const chromeApi = mockChrome()
+    chromeApi.tabsGet.mockResolvedValue({
+      id: 7,
+      url: "https://github.com/inbox"
+    })
     chromeApi.tabsQuery.mockResolvedValue([
       { id: 7, url: "https://github.com/inbox" },
       { id: 8, url: "https://gist.github.com/demo" },
       { id: 9, url: "https://github.com/settings" },
-      { id: 10, url: "https://evil.com.example.net/path" },
-      { id: 11, url: "https://github.com/private", incognito: true },
+      { id: 10, url: "http://github.com/legacy" },
+      { id: 11, url: "https://evil.com.example.net/path" },
+      { id: 12, url: "https://github.com/private", incognito: true },
       { url: "https://github.com/missing-id" }
     ])
 
@@ -264,13 +272,12 @@ describe("background SWITCH", () => {
       syncedTabCount: 2
     })
     expect(chromeApi.tabsQuery).toHaveBeenCalledWith({
-      url: ["*://*.github.com/*", "*://github.com/*"]
+      url: ["https://*.github.com/*", "https://github.com/*"]
     })
-    expect(clearLocalStorage).toHaveBeenCalledTimes(2)
-    expect(clearLocalStorage).toHaveBeenNthCalledWith(1, 8)
-    expect(clearLocalStorage).toHaveBeenNthCalledWith(2, 9)
-    expect(injectLocalStorage).toHaveBeenNthCalledWith(1, 8, { token: "bob" })
-    expect(injectLocalStorage).toHaveBeenNthCalledWith(2, 9, { token: "bob" })
+    expect(clearLocalStorage).toHaveBeenCalledTimes(1)
+    expect(clearLocalStorage).toHaveBeenCalledWith(9)
+    expect(injectLocalStorage).toHaveBeenCalledTimes(1)
+    expect(injectLocalStorage).toHaveBeenCalledWith(9, { token: "bob" })
     expect(chromeApi.tabsReload).toHaveBeenNthCalledWith(1, 8)
     expect(chromeApi.tabsReload).toHaveBeenNthCalledWith(2, 9)
     expect(setActiveAccount).toHaveBeenCalledWith("github.com", "to")
@@ -290,16 +297,15 @@ describe("background SWITCH", () => {
 
   it("keeps syncing later phases even if one tab fails earlier", async () => {
     const chromeApi = mockChrome()
+    chromeApi.tabsGet.mockResolvedValue({
+      id: 7,
+      url: "https://github.com/inbox"
+    })
     chromeApi.tabsQuery.mockResolvedValue([
       { id: 7, url: "https://github.com/inbox" },
       { id: 8, url: "https://github.com/one" },
-      { id: 9, url: "https://gist.github.com/two" }
+      { id: 9, url: "https://github.com/two" }
     ])
-    chromeApi.tabsReload.mockImplementation(async (tabId: number) => {
-      if (tabId === 9) {
-        throw new Error("tab closed")
-      }
-    })
 
     const key = {} as CryptoKey
     const clearLocalStorage = vi.fn(async (tabId: number) => {
@@ -383,7 +389,13 @@ describe("background SWITCH", () => {
       syncedTabCount: 1
     })
     expect(clearLocalStorage).toHaveBeenCalledTimes(2)
-    expect(injectLocalStorage).toHaveBeenCalledTimes(2)
-    expect(chromeApi.tabsReload).toHaveBeenCalledTimes(2)
+    expect(injectLocalStorage).toHaveBeenCalledTimes(1)
+    expect(injectLocalStorage).toHaveBeenCalledWith(9, { token: "bob" })
+    expect(chromeApi.tabsReload).toHaveBeenCalledTimes(1)
+    expect(chromeApi.tabsReload).toHaveBeenCalledWith(9)
+    expect(chromeApi.setBadgeText).not.toHaveBeenCalledWith({
+      tabId: 8,
+      text: "BO"
+    })
   })
 })
