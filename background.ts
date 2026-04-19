@@ -246,7 +246,15 @@ async function handle(msg: UiMsg): Promise<UiResp> {
     }
 
     case "SET_CF_CONFIG": {
+      const previous = await getCfConfig()
+      const namespaceChanged =
+        previous === null ||
+        previous.accountId !== msg.cfg.accountId ||
+        previous.namespaceId !== msg.cfg.namespaceId
       await setCfConfig(msg.cfg)
+      if (namespaceChanged && masterKey) {
+        await setLocked()
+      }
       return { ok: true }
     }
 
