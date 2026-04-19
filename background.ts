@@ -1,4 +1,11 @@
-import { initializeMeta, isInitialized, loadIndex, unlock } from "./lib/account"
+import {
+  initializeMeta,
+  isInitialized,
+  loadIndex,
+  loadMeta,
+  unlock,
+  validateSchemaVersion
+} from "./lib/account"
 import { CfKvClient } from "./lib/cf-kv"
 import { getETLDPlusOne } from "./lib/domain"
 import type { BroadcastMsg, UiMsg, UiResp } from "./lib/messages"
@@ -49,8 +56,28 @@ async function ensureKeyRestored(): Promise<void> {
 
   restorePromise = (async () => {
     const restored = await restoreSessionKey()
-    if (restored) {
+    if (!restored) {
+      return
+    }
+    // Before trusting the restored key for any read/write, confirm the KV's
+    // schema is still one this build supports. Another device may have
+    // migrated the vault while this one was suspended; using the cached key
+    // against an incompatible layout would silently corrupt data.
+    try {
+      const config = await getCfConfig()
+      if (!config) {
+        await clearSessionKey()
+        return
+      }
+      const meta = await loadMeta(new CfKvClient(config))
+      if (!meta) {
+        await clearSessionKey()
+        return
+      }
+      validateSchemaVersion(meta)
       masterKey = restored
+    } catch {
+      await clearSessionKey()
     }
   })()
 

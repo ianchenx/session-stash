@@ -46,16 +46,7 @@ export async function initializeMeta(
   return key
 }
 
-export async function unlock(
-  client: CfKvClient,
-  password: string
-): Promise<CryptoKey> {
-  const raw = await client.get(KV_KEY_META)
-  if (raw === null) {
-    throw new Error("not initialized")
-  }
-
-  const meta = JSON.parse(new TextDecoder().decode(raw)) as Meta
+export function validateSchemaVersion(meta: Meta): void {
   if (typeof meta.schemaVersion !== "number") {
     throw new Error("meta is corrupted: schemaVersion missing or invalid")
   }
@@ -69,6 +60,19 @@ export async function unlock(
       `vault schema v${meta.schemaVersion} is older than supported (v${SCHEMA_VERSION}); migration not implemented`
     )
   }
+}
+
+export async function unlock(
+  client: CfKvClient,
+  password: string
+): Promise<CryptoKey> {
+  const raw = await client.get(KV_KEY_META)
+  if (raw === null) {
+    throw new Error("not initialized")
+  }
+
+  const meta = JSON.parse(new TextDecoder().decode(raw)) as Meta
+  validateSchemaVersion(meta)
   const salt = base64ToBytes(meta.salt)
   const key = await deriveMasterKey(password, salt)
   const verifierCipher = base64ToBytes(meta.verifier)

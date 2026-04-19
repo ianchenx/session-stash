@@ -550,6 +550,131 @@ describe("background SAVE_NEW", () => {
   })
 })
 
+describe("background ensureKeyRestored schema validation", () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  it("accepts restored key when meta.schemaVersion matches", async () => {
+    const chromeApi = mockChrome()
+
+    const key = {} as CryptoKey
+    const clearSessionKey = vi.fn(async () => undefined)
+    const restoreSessionKey = vi.fn(async () => key)
+    const loadMeta = vi.fn(async () => ({
+      schemaVersion: 1,
+      salt: "AAAA",
+      verifier: "BBBB"
+    }))
+    const validateSchemaVersion = vi.fn(() => undefined)
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => null),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig: vi.fn(async () => cfConfig),
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig: vi.fn(async () => undefined)
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      loadMeta,
+      unlock: vi.fn(async () => key),
+      validateSchemaVersion
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(),
+      overwriteWithCurrent: vi.fn(),
+      renameAccount: vi.fn(),
+      saveAsNewAccount: vi.fn(),
+      switchAccount: vi.fn()
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey,
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey,
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    const status = (await sendMessage(listener, {
+      type: "STATUS"
+    })) as { unlocked: boolean }
+    expect(restoreSessionKey).toHaveBeenCalled()
+    expect(loadMeta).toHaveBeenCalled()
+    expect(validateSchemaVersion).toHaveBeenCalled()
+    expect(clearSessionKey).not.toHaveBeenCalled()
+    expect(status.unlocked).toBe(true)
+  })
+
+  it("drops restored key when meta.schemaVersion is too new", async () => {
+    const chromeApi = mockChrome()
+
+    const key = {} as CryptoKey
+    const clearSessionKey = vi.fn(async () => undefined)
+    const restoreSessionKey = vi.fn(async () => key)
+    const loadMeta = vi.fn(async () => ({
+      schemaVersion: 99,
+      salt: "AAAA",
+      verifier: "BBBB"
+    }))
+    const validateSchemaVersion = vi.fn(() => {
+      throw new Error("vault schema v99 is newer than this extension supports")
+    })
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => null),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig: vi.fn(async () => cfConfig),
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig: vi.fn(async () => undefined)
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      loadMeta,
+      unlock: vi.fn(async () => key),
+      validateSchemaVersion
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(),
+      overwriteWithCurrent: vi.fn(),
+      renameAccount: vi.fn(),
+      saveAsNewAccount: vi.fn(),
+      switchAccount: vi.fn()
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey,
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey,
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    const status = (await sendMessage(listener, {
+      type: "STATUS"
+    })) as { unlocked: boolean }
+    expect(validateSchemaVersion).toHaveBeenCalled()
+    expect(clearSessionKey).toHaveBeenCalled()
+    expect(status.unlocked).toBe(false)
+  })
+})
+
 describe("background SET_CF_CONFIG", () => {
   beforeEach(() => {
     vi.resetModules()
