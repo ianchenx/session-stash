@@ -47,13 +47,13 @@ typecheck:              ## TypeScript typecheck (no emit)
 	pnpm exec tsc --noEmit
 
 format-check:           ## Check formatting (prettier)
-	pnpm exec prettier --check . --ignore-path .gitignore
+	pnpm exec prettier --check . --ignore-path .gitignore --ignore-path .prettierignore
 
 lint:                   ## Lint source code (biome)
 	pnpm exec biome lint
 
 format:                 ## Format all files (prettier)
-	pnpm exec prettier --write . --ignore-path .gitignore
+	pnpm exec prettier --write . --ignore-path .gitignore --ignore-path .prettierignore
 
 check: typecheck format-check lint test  ## Typecheck + prettier check + biome lint + tests
 

@@ -1,0 +1,8 @@
+# Files tracked in git but owned by other tools — Prettier must not rewrite them.
+# Build artifacts and deps are handled by .gitignore (via --ignore-path).
+
+# Package manager lockfiles are generated and re-serialized by the package
+# manager; reformatting breaks `pnpm install --frozen-lockfile`.
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
