@@ -27,15 +27,11 @@ export async function clearCookies(eTLDPlusOne: string): Promise<void> {
 
   for (const cookie of cookies) {
     const url = buildCookieUrl(cookie.secure, cookie.domain, cookie.path)
-    try {
-      await chrome.cookies.remove({
-        url,
-        name: cookie.name,
-        storeId: cookie.storeId
-      })
-    } catch {
-      // Continue removing the rest of the cookies for the domain.
-    }
+    await chrome.cookies.remove({
+      url,
+      name: cookie.name,
+      storeId: cookie.storeId
+    })
   }
 }
 
@@ -61,14 +57,7 @@ export async function injectCookies(
       details.expirationDate = cookie.expirationDate
     }
 
-    try {
-      await chrome.cookies.set(details)
-    } catch (error) {
-      console.warn(
-        `cookie inject failed: ${cookie.name}@${cookie.domain}`,
-        error
-      )
-    }
+    await chrome.cookies.set(details)
   }
 }
 
