@@ -39,6 +39,8 @@ export type UiMsg =
   | { type: "SET_LOCK_POLICY"; policy: LockPolicy }
   | { type: "GET_LOCK_POLICY" }
 
+export type BroadcastMsg = { type: "VAULT_CHANGED" }
+
 export type UiResp =
   | { ok: true; data?: unknown }
   | { ok: false; error: string }

@@ -1,7 +1,7 @@
 import { initializeMeta, isInitialized, loadIndex, unlock } from "./lib/account"
 import { CfKvClient } from "./lib/cf-kv"
 import { getETLDPlusOne } from "./lib/domain"
-import type { UiMsg, UiResp } from "./lib/messages"
+import type { BroadcastMsg, UiMsg, UiResp } from "./lib/messages"
 import {
   clearCookies,
   clearLocalStorage,
@@ -473,9 +473,30 @@ async function handle(msg: UiMsg): Promise<UiResp> {
   }
 }
 
+const READ_ONLY_TYPES: ReadonlySet<UiMsg["type"]> = new Set([
+  "STATUS",
+  "GET_CF_CONFIG",
+  "LIST_ALL",
+  "LIST_ACCOUNTS",
+  "GET_LOCK_POLICY"
+])
+
+async function broadcast(msg: BroadcastMsg): Promise<void> {
+  try {
+    await chrome.runtime.sendMessage(msg)
+  } catch {
+    // No extension pages open to receive the broadcast.
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg: UiMsg, _sender, sendResponse) => {
   handle(msg)
-    .then((response) => sendResponse(response))
+    .then((response) => {
+      sendResponse(response)
+      if (response.ok && !READ_ONLY_TYPES.has(msg.type)) {
+        void broadcast({ type: "VAULT_CHANGED" })
+      }
+    })
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error)
       sendResponse({ ok: false, error: message })

@@ -88,6 +88,21 @@ export function useSessionPanel() {
     void refresh()
   }, [refresh])
 
+  useEffect(() => {
+    const listener = (msg: unknown) => {
+      if (
+        typeof msg === "object" &&
+        msg !== null &&
+        "type" in msg &&
+        (msg as { type: unknown }).type === "VAULT_CHANGED"
+      ) {
+        void refresh()
+      }
+    }
+    chrome.runtime.onMessage.addListener(listener)
+    return () => chrome.runtime.onMessage.removeListener(listener)
+  }, [refresh])
+
   const domains = useMemo(() => {
     const set = new Map<string, number>()
     for (const account of accounts) {
