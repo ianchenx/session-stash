@@ -1,4 +1,5 @@
 import {
+  accountKey,
   deleteAccount,
   loadAccount,
   loadIndex,
@@ -14,6 +15,36 @@ import type {
   Index,
   SessionSnapshot
 } from "./types"
+
+// Writes a new-or-updated account blob together with the index that references
+// it. The pair isn't atomic in KV, so on index-write failure we best-effort
+// restore the previous blob state: create (no prior blob) rolls back via
+// delete; update restores the captured bytes. A failed rollback still lets the
+// original error propagate, but leaves the blob ahead of the index.
+async function commitAccountWrite(
+  client: CfKvClient,
+  key: CryptoKey,
+  account: Account,
+  nextIndex: Index
+): Promise<void> {
+  const blobKey = accountKey(account.id)
+  const previousBlob = await client.get(blobKey)
+  await saveAccount(client, key, account)
+  try {
+    await saveIndex(client, key, nextIndex)
+  } catch (error) {
+    try {
+      if (previousBlob === null) {
+        await client.delete(blobKey)
+      } else {
+        await client.put(blobKey, previousBlob)
+      }
+    } catch {
+      // best-effort rollback
+    }
+    throw error
+  }
+}
 
 export type SaveAsNewAccountArgs = {
   client: CfKvClient
@@ -51,7 +82,6 @@ export async function saveAsNewAccount(
     }
   }
 
-  await saveAccount(client, key, account)
   const next: Index = {
     accounts: [
       ...index.accounts,
@@ -65,16 +95,7 @@ export async function saveAsNewAccount(
     ],
     updatedAt: now
   }
-  try {
-    await saveIndex(client, key, next)
-  } catch (error) {
-    try {
-      await deleteAccount(client, account.id)
-    } catch {
-      // best-effort rollback; an orphan blob is preferable to a ghost index entry
-    }
-    throw error
-  }
+  await commitAccountWrite(client, key, account, next)
   return account.id
 }
 
@@ -175,7 +196,6 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
         updatedAt: Date.now()
       }
 
-      await saveAccount(client, key, updated)
       const nextIndex: Index = {
         accounts: index.accounts.map((entry) =>
           entry.id === fromAccountId
@@ -188,7 +208,7 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
         ),
         updatedAt: Date.now()
       }
-      await saveIndex(client, key, nextIndex)
+      await commitAccountWrite(client, key, updated, nextIndex)
       pushedFrom = true
     }
   }
@@ -249,21 +269,22 @@ export async function overwriteWithCurrent(
 
   const newVersion = entry.version + 1
   const now = Date.now()
-  await saveAccount(client, key, {
+  const updated: Account = {
     ...account,
     cookies: snapshot.cookies,
     localStorage: snapshot.localStorage,
     version: newVersion,
     updatedAt: now
-  })
-  await saveIndex(client, key, {
+  }
+  const nextIndex: Index = {
     accounts: index.accounts.map((existing) =>
       existing.id === accountId
         ? { ...existing, version: newVersion, updatedAt: now }
         : existing
     ),
     updatedAt: now
-  })
+  }
+  await commitAccountWrite(client, key, updated, nextIndex)
   return newVersion
 }
 
@@ -316,8 +337,6 @@ export async function renameAccount(args: RenameArgs): Promise<void> {
 
   const now = Date.now()
   const renamed: Account = { ...account, label: trimmed, updatedAt: now }
-  await saveAccount(client, key, renamed)
-
   const next: Index = {
     accounts: index.accounts.map((entry) =>
       entry.id === accountId
@@ -326,5 +345,5 @@ export async function renameAccount(args: RenameArgs): Promise<void> {
     ),
     updatedAt: now
   }
-  await saveIndex(client, key, next)
+  await commitAccountWrite(client, key, renamed, next)
 }

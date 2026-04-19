@@ -488,6 +488,64 @@ describe("switcher.overwriteWithCurrent", () => {
     expect(after.cookies[0].value).toBe("latest")
   })
 
+  it("restores old blob when index write fails", async () => {
+    const accountA = await seedAccount(client, key, {
+      id: "A",
+      domain: "x.com",
+      label: "A"
+    })
+    const blobKeyA = `account:${accountA.id}`
+    const blobBefore = client.store.get(blobKeyA)
+    if (!blobBefore) {
+      throw new Error("expected seeded blob")
+    }
+    const snapshotOfBlobBefore = new Uint8Array(blobBefore)
+
+    const adapter = fakeAdapter({
+      live: {
+        cookies: [
+          {
+            name: "auth",
+            value: "latest",
+            domain: ".x.com",
+            path: "/",
+            secure: true,
+            httpOnly: true,
+            sameSite: "lax"
+          }
+        ],
+        localStorage: { uid: "A" }
+      }
+    })
+
+    const originalPut = client.put.bind(client)
+    ;(client as unknown as { put: CfKvClient["put"] }).put = async (
+      k,
+      v
+    ) => {
+      if (k === "index") {
+        throw new Error("index put failed")
+      }
+      return originalPut(k, v)
+    }
+
+    await expect(
+      overwriteWithCurrent({ client, key, adapter, accountId: accountA.id })
+    ).rejects.toThrow(/index put failed/)
+
+    const blobAfter = client.store.get(blobKeyA)
+    if (!blobAfter) {
+      throw new Error("blob was unexpectedly deleted on update rollback")
+    }
+    expect(Array.from(blobAfter)).toEqual(Array.from(snapshotOfBlobBefore))
+
+    ;(client as unknown as { put: CfKvClient["put"] }).put = originalPut
+    const { loadAccount } = await import("../account")
+    const restored = await loadAccount(client, key, accountA.id)
+    expect(restored?.version).toBe(1)
+    expect(restored?.cookies[0].value).toBe(`v-${accountA.id}`)
+  })
+
   it("refuses push when STALE/EMPTY", async () => {
     const accountA = await seedAccount(client, key, {
       id: "A",

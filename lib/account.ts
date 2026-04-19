@@ -115,7 +115,7 @@ export async function saveIndex(
   await client.put(KV_KEY_INDEX, blob)
 }
 
-function accountKey(id: string): string {
+export function accountKey(id: string): string {
   return `${KV_KEY_ACCOUNT_PREFIX}${id}`
 }
 
