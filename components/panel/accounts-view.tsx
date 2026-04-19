@@ -29,6 +29,7 @@ import {
 } from "~components/ui/empty"
 import { ScrollArea } from "~components/ui/scroll-area"
 import type { IndexEntry } from "~lib/types"
+import { useAccountAction } from "~lib/use-account-action"
 import type { PanelState } from "~lib/use-session-panel"
 
 type Props = {
@@ -41,7 +42,7 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
   const [renameTarget, setRenameTarget] = useState<IndexEntry | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<IndexEntry | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
-  const [pendingId, setPendingId] = useState<string | null>(null)
+  const { pendingId, run: runWithPending } = useAccountAction()
 
   const {
     selectedDomain,
@@ -61,17 +62,6 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
 
   const isCurrentDomain = tab.domain === selectedDomain
   const canClear = isCurrentDomain && Boolean(tab.id)
-
-  async function runWithPending(id: string, fn: () => Promise<void>) {
-    setPendingId(id)
-    try {
-      await fn()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setPendingId(null)
-    }
-  }
 
   return (
     <section className="flex flex-1 flex-col">

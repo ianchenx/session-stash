@@ -13,3 +13,10 @@ export function isErrorResp(
 export function respError(resp: UiResp): string | null {
   return isErrorResp(resp) ? resp.error : null
 }
+
+export async function sendOrThrow(msg: UiMsg): Promise<UiResp> {
+  const response = await send(msg)
+  const error = respError(response)
+  if (error) throw new Error(error)
+  return response
+}

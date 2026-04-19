@@ -9,11 +9,11 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "~components/ui/tooltip"
+import type { VaultStatus } from "~lib/messages"
 import { useAsyncAction } from "~lib/use-async-action"
-import type { Status } from "~lib/use-session-panel"
 
 type Props = {
-  status: Status | null
+  status: VaultStatus | null
   onLock: () => Promise<void>
   onOpenSettings: () => void
 }

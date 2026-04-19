@@ -41,6 +41,7 @@ import {
 } from "~components/ui/tooltip"
 import { cn } from "~lib/cn"
 import { formatRelative } from "~lib/format"
+import { useAccountAction } from "~lib/use-account-action"
 import { useAsyncAction } from "~lib/use-async-action"
 import { useSessionPanel } from "~lib/use-session-panel"
 
@@ -295,21 +296,10 @@ function Body({
     doSwitch,
     pushCurrent
   } = panel
-  const [pendingId, setPendingId] = useState<string | null>(null)
+  const { pendingId, run: runWithPending } = useAccountAction()
 
   const showingCurrent = tab.domain && selectedDomain === tab.domain
   const accounts = showingCurrent ? selectedAccounts : []
-
-  async function runWithPending(id: string, fn: () => Promise<void>) {
-    setPendingId(id)
-    try {
-      await fn()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setPendingId(null)
-    }
-  }
 
   if (!tab.domain) {
     return (

@@ -1,6 +1,5 @@
 import { AlertTriangle, Lock, Unlock } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 
 import { PasswordInput } from "~components/password-input"
 import { Alert, AlertDescription, AlertTitle } from "~components/ui/alert"
@@ -19,87 +18,54 @@ import {
   FieldGroup,
   FieldLabel
 } from "~components/ui/field"
-import { respError, send } from "~lib/messaging"
-
-type Status = {
-  cfConfigured: boolean
-  initialized: boolean
-  unlocked: boolean
-}
+import type { VaultStatus } from "~lib/messages"
+import { sendOrThrow } from "~lib/messaging"
+import { useAsyncAction } from "~lib/use-async-action"
 
 type Props = {
-  status: Status
+  status: VaultStatus
   onChanged: () => void
 }
 
 export function MasterPasswordCard({ status, onChanged }: Props) {
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
-  const [busy, setBusy] = useState(false)
 
   const cfMissing = !status.cfConfigured
 
-  async function initPassword() {
-    if (password.length < 12) {
-      toast.error("Password must be at least 12 characters.")
-      return
-    }
-    if (password !== confirm) {
-      toast.error("Passwords do not match.")
-      return
-    }
+  const initAction = useAsyncAction(
+    async () => {
+      if (password.length < 12) {
+        throw new Error("Password must be at least 12 characters.")
+      }
+      if (password !== confirm) {
+        throw new Error("Passwords do not match.")
+      }
+      await sendOrThrow({ type: "INIT_META", password })
+      setPassword("")
+      setConfirm("")
+      onChanged()
+    },
+    { successMessage: "Vault initialized and unlocked." }
+  )
 
-    setBusy(true)
-    const response = await send({ type: "INIT_META", password })
-    setBusy(false)
+  const unlockAction = useAsyncAction(
+    async () => {
+      if (!password) throw new Error("Enter your master password.")
+      await sendOrThrow({ type: "UNLOCK", password })
+      setPassword("")
+      onChanged()
+    },
+    { successMessage: "Unlocked." }
+  )
 
-    const error = respError(response)
-    if (error) {
-      toast.error(error)
-      return
-    }
-
-    toast.success("Vault initialized and unlocked.")
-    setPassword("")
-    setConfirm("")
-    onChanged()
-  }
-
-  async function unlock() {
-    if (!password) {
-      toast.error("Enter your master password.")
-      return
-    }
-
-    setBusy(true)
-    const response = await send({ type: "UNLOCK", password })
-    setBusy(false)
-
-    const error = respError(response)
-    if (error) {
-      toast.error(error)
-      return
-    }
-
-    toast.success("Unlocked.")
-    setPassword("")
-    onChanged()
-  }
-
-  async function lock() {
-    setBusy(true)
-    const response = await send({ type: "LOCK" })
-    setBusy(false)
-
-    const error = respError(response)
-    if (error) {
-      toast.error(error)
-      return
-    }
-
-    toast.success("Locked.")
-    onChanged()
-  }
+  const lockAction = useAsyncAction(
+    async () => {
+      await sendOrThrow({ type: "LOCK" })
+      onChanged()
+    },
+    { successMessage: "Locked." }
+  )
 
   return (
     <Card>
@@ -174,7 +140,7 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
                 onChange={(event) => setPassword(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
-                    void unlock()
+                    void unlockAction.run()
                   }
                 }}
               />
@@ -197,17 +163,24 @@ export function MasterPasswordCard({ status, onChanged }: Props) {
       </CardContent>
       <CardFooter className="justify-end gap-2 p-4 pt-3">
         {!status.initialized && !cfMissing && (
-          <Button onClick={initPassword} disabled={busy}>
+          <Button
+            loading={initAction.busy}
+            onClick={() => void initAction.run()}>
             Initialize vault
           </Button>
         )}
         {status.initialized && !status.unlocked && (
-          <Button onClick={unlock} disabled={busy}>
+          <Button
+            loading={unlockAction.busy}
+            onClick={() => void unlockAction.run()}>
             Unlock
           </Button>
         )}
         {status.unlocked && (
-          <Button variant="outline" onClick={lock} disabled={busy}>
+          <Button
+            variant="outline"
+            loading={lockAction.busy}
+            onClick={() => void lockAction.run()}>
             <Lock className="h-4 w-4" data-icon="inline-start" />
             Lock now
           </Button>

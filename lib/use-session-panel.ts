@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { getETLDPlusOne } from "./domain"
+import type { VaultStatus } from "./messages"
 import { respError, send } from "./messaging"
-import type { LockPolicy } from "./session-lock"
 import type { ConflictInfo, ConflictResolution, IndexEntry } from "./types"
-
-export type Status = {
-  cfConfigured: boolean
-  initialized: boolean
-  unlocked: boolean
-  lockPolicy: LockPolicy
-}
 
 export type Tab = {
   id: number | null
@@ -26,7 +19,7 @@ export type PendingConflict = {
 export type PanelState = ReturnType<typeof useSessionPanel>
 
 export function useSessionPanel() {
-  const [status, setStatus] = useState<Status | null>(null)
+  const [status, setStatus] = useState<VaultStatus | null>(null)
   const [accounts, setAccounts] = useState<IndexEntry[]>([])
   const [activeByDomain, setActiveByDomain] = useState<Record<string, string>>(
     {}

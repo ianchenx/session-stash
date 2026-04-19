@@ -9,18 +9,12 @@ import { Badge } from "~components/ui/badge"
 import { Logo } from "~components/ui/logo"
 import { Skeleton } from "~components/ui/skeleton"
 import { Toaster } from "~components/ui/sonner"
+import type { VaultStatus } from "~lib/messages"
 import { send } from "~lib/messaging"
-import { DEFAULT_LOCK_POLICY, type LockPolicy } from "~lib/session-lock"
-
-type Status = {
-  cfConfigured: boolean
-  initialized: boolean
-  unlocked: boolean
-  lockPolicy: LockPolicy
-}
+import { DEFAULT_LOCK_POLICY } from "~lib/session-lock"
 
 function Options() {
-  const [status, setStatus] = useState<Status | null>(null)
+  const [status, setStatus] = useState<VaultStatus | null>(null)
 
   const refresh = useCallback(async () => {
     const response = await send({ type: "STATUS" })
@@ -83,7 +77,7 @@ function Options() {
   )
 }
 
-function StatusPills({ status }: { status: Status | null }) {
+function StatusPills({ status }: { status: VaultStatus | null }) {
   if (!status) {
     return <Skeleton className="h-6 w-32" />
   }

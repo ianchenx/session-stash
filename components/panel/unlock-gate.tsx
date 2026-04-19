@@ -13,11 +13,11 @@ import {
   EmptyTitle
 } from "~components/ui/empty"
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
+import type { VaultStatus } from "~lib/messages"
 import { useAsyncAction } from "~lib/use-async-action"
-import type { Status } from "~lib/use-session-panel"
 
 type Props = {
-  status: Status
+  status: VaultStatus
   onUnlock: (password: string) => Promise<void>
   onOpenSettings: () => void
 }

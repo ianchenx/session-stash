@@ -7,6 +7,13 @@ import type {
   IndexEntry
 } from "./types"
 
+export type VaultStatus = {
+  cfConfigured: boolean
+  initialized: boolean
+  unlocked: boolean
+  lockPolicy: LockPolicy
+}
+
 export type UiMsg =
   | { type: "STATUS" }
   | { type: "GET_CF_CONFIG" }
@@ -36,14 +43,7 @@ export type UiMsg =
 export type UiResp =
   | { ok: true; data?: unknown }
   | { ok: false; error: string }
-  | {
-      ok: true
-      kind: "status"
-      initialized: boolean
-      unlocked: boolean
-      cfConfigured: boolean
-      lockPolicy: LockPolicy
-    }
+  | ({ ok: true; kind: "status" } & VaultStatus)
   | {
       ok: true
       kind: "accounts"
