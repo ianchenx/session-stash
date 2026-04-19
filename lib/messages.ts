@@ -3,7 +3,6 @@ import type {
   CfConfig,
   ConflictInfo,
   ConflictResolution,
-  HealthStatus,
   IndexEntry
 } from "./types"
 
@@ -61,6 +60,7 @@ export type UiResp =
       kind: "switched"
       pushedFrom: boolean
       newFromVersion: number | null
+      syncedTabCount: number
     }
   | { ok: true; kind: "conflict"; info: ConflictInfo }
   | { ok: true; kind: "lock-policy"; policy: LockPolicy }

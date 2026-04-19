@@ -14,6 +14,8 @@ function mockChrome() {
   const setBadgeBackgroundColor = vi.fn(async () => undefined)
   const alarmsCreate = vi.fn()
   const alarmsClear = vi.fn(async () => true)
+  const tabsQuery = vi.fn(async (_queryInfo?: chrome.tabs.QueryInfo) => [])
+  const tabsReload = vi.fn(async (_tabId?: number) => undefined)
 
   ;(globalThis as typeof globalThis & { chrome: typeof chrome }).chrome = {
     runtime: {
@@ -29,6 +31,10 @@ function mockChrome() {
     action: {
       setBadgeText,
       setBadgeBackgroundColor
+    },
+    tabs: {
+      query: tabsQuery,
+      reload: tabsReload
     },
     alarms: {
       create: alarmsCreate,
@@ -58,6 +64,8 @@ function mockChrome() {
     },
     setBadgeText,
     setBadgeBackgroundColor,
+    tabsQuery,
+    tabsReload,
     alarmsCreate,
     alarmsClear
   }
@@ -154,5 +162,228 @@ describe("background DELETE", () => {
     expect(setActiveAccount).toHaveBeenCalledWith("x.com", null)
     expect(chromeApi.setBadgeText).toHaveBeenCalledWith({ tabId: 7, text: "" })
     expect(chromeApi.setBadgeBackgroundColor).not.toHaveBeenCalled()
+  })
+})
+
+describe("background SWITCH", () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  it("syncs other same-domain tabs and returns the synced count", async () => {
+    const chromeApi = mockChrome()
+    chromeApi.tabsQuery.mockResolvedValue([
+      { id: 7, url: "https://github.com/inbox" },
+      { id: 8, url: "https://gist.github.com/demo" },
+      { id: 9, url: "https://github.com/settings" },
+      { id: 10, url: "https://evil.com.example.net/path" },
+      { id: 11, url: "https://github.com/private", incognito: true },
+      { url: "https://github.com/missing-id" }
+    ])
+
+    const key = {} as CryptoKey
+    const getCfConfig = vi.fn(async () => cfConfig)
+    const setActiveAccount = vi.fn(async () => undefined)
+    const initializeMeta = vi.fn(async () => key)
+    const clearLocalStorage = vi.fn(async () => undefined)
+    const injectLocalStorage = vi.fn(async () => undefined)
+    const switchAccount = vi.fn(async () => ({
+      pushedFrom: false,
+      newFromVersion: null,
+      conflictResolution: null,
+      toAccount: {
+        id: "to",
+        domain: "github.com",
+        label: "Bob",
+        version: 1,
+        updatedAt: 1,
+        cookies: [],
+        localStorage: { token: "bob" },
+        criticalKeys: { cookies: [], localStorage: [] }
+      }
+    }))
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => "from"),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig,
+      setActiveAccount,
+      setCfConfig: vi.fn(async () => undefined)
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta,
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      unlock: vi.fn(async () => key)
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount: vi.fn(async () => "new-id"),
+      switchAccount
+    }))
+    vi.doMock("../session", () => ({
+      checkHealth: vi.fn(),
+      clearCookies: vi.fn(async () => undefined),
+      clearLocalStorage,
+      injectCookies: vi.fn(async () => undefined),
+      injectLocalStorage,
+      snapshotCookies: vi.fn(async () => []),
+      snapshotLocalStorage: vi.fn(async () => ({}))
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey: vi.fn(async () => undefined),
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    const response = await sendMessage(listener, {
+      type: "SWITCH",
+      domain: "github.com",
+      fromId: "from",
+      toId: "to",
+      tabId: 7
+    })
+
+    expect(response).toEqual({
+      ok: true,
+      kind: "switched",
+      pushedFrom: false,
+      newFromVersion: null,
+      syncedTabCount: 2
+    })
+    expect(chromeApi.tabsQuery).toHaveBeenCalledWith({
+      url: ["*://*.github.com/*", "*://github.com/*"]
+    })
+    expect(clearLocalStorage).toHaveBeenCalledTimes(2)
+    expect(clearLocalStorage).toHaveBeenNthCalledWith(1, 8)
+    expect(clearLocalStorage).toHaveBeenNthCalledWith(2, 9)
+    expect(injectLocalStorage).toHaveBeenNthCalledWith(1, 8, { token: "bob" })
+    expect(injectLocalStorage).toHaveBeenNthCalledWith(2, 9, { token: "bob" })
+    expect(chromeApi.tabsReload).toHaveBeenNthCalledWith(1, 8)
+    expect(chromeApi.tabsReload).toHaveBeenNthCalledWith(2, 9)
+    expect(setActiveAccount).toHaveBeenCalledWith("github.com", "to")
+    expect(chromeApi.setBadgeText).toHaveBeenCalledWith({
+      tabId: 7,
+      text: "BO"
+    })
+    expect(chromeApi.setBadgeText).toHaveBeenCalledWith({
+      tabId: 8,
+      text: "BO"
+    })
+    expect(chromeApi.setBadgeText).toHaveBeenCalledWith({
+      tabId: 9,
+      text: "BO"
+    })
+  })
+
+  it("keeps syncing later phases even if one tab fails earlier", async () => {
+    const chromeApi = mockChrome()
+    chromeApi.tabsQuery.mockResolvedValue([
+      { id: 7, url: "https://github.com/inbox" },
+      { id: 8, url: "https://github.com/one" },
+      { id: 9, url: "https://gist.github.com/two" }
+    ])
+    chromeApi.tabsReload.mockImplementation(async (tabId: number) => {
+      if (tabId === 9) {
+        throw new Error("tab closed")
+      }
+    })
+
+    const key = {} as CryptoKey
+    const clearLocalStorage = vi.fn(async (tabId: number) => {
+      if (tabId === 8) {
+        throw new Error("cannot clear")
+      }
+    })
+    const injectLocalStorage = vi.fn(async () => undefined)
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => "from"),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig: vi.fn(async () => cfConfig),
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig: vi.fn(async () => undefined)
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      unlock: vi.fn(async () => key)
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount: vi.fn(async () => "new-id"),
+      switchAccount: vi.fn(async () => ({
+        pushedFrom: false,
+        newFromVersion: null,
+        conflictResolution: null,
+        toAccount: {
+          id: "to",
+          domain: "github.com",
+          label: "Bob",
+          version: 1,
+          updatedAt: 1,
+          cookies: [],
+          localStorage: { token: "bob" },
+          criticalKeys: { cookies: [], localStorage: [] }
+        }
+      }))
+    }))
+    vi.doMock("../session", () => ({
+      checkHealth: vi.fn(),
+      clearCookies: vi.fn(async () => undefined),
+      clearLocalStorage,
+      injectCookies: vi.fn(async () => undefined),
+      injectLocalStorage,
+      snapshotCookies: vi.fn(async () => []),
+      snapshotLocalStorage: vi.fn(async () => ({}))
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey: vi.fn(async () => undefined),
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    const response = await sendMessage(listener, {
+      type: "SWITCH",
+      domain: "github.com",
+      fromId: "from",
+      toId: "to",
+      tabId: 7
+    })
+
+    expect(response).toEqual({
+      ok: true,
+      kind: "switched",
+      pushedFrom: false,
+      newFromVersion: null,
+      syncedTabCount: 1
+    })
+    expect(clearLocalStorage).toHaveBeenCalledTimes(2)
+    expect(injectLocalStorage).toHaveBeenCalledTimes(2)
+    expect(chromeApi.tabsReload).toHaveBeenCalledTimes(2)
   })
 })

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { initializeMeta, loadAccount, loadIndex } from "../account"
-import { CfKvClient } from "../cf-kv"
+import type { CfKvClient } from "../cf-kv"
 import {
   deleteAccountFlow,
   overwriteWithCurrent,
@@ -64,7 +64,10 @@ describe("switcher.saveAsNewAccount", () => {
     expect(index.accounts).toHaveLength(1)
     expect(index.accounts[0].id).toBe(id)
     expect(index.accounts[0].label).toBe("Personal")
-    const account = (await loadAccount(client, key, id))!
+    const account = await loadAccount(client, key, id)
+    if (!account) {
+      throw new Error("expected saved account")
+    }
     expect(account.cookies).toHaveLength(1)
     expect(account.criticalKeys.cookies).toEqual(["auth"])
     expect(account.criticalKeys.localStorage).toEqual(["uid"])
@@ -213,7 +216,7 @@ describe("switcher.switchAccount", () => {
       }
     })
 
-    await switchAccount({
+    const result = await switchAccount({
       client,
       key,
       adapter,
@@ -223,8 +226,13 @@ describe("switcher.switchAccount", () => {
 
     expect(adapter.calls).toEqual(["snapshot", "clear", "inject", "reload"])
     expect(adapter.live.cookies[0].value).toBe("v-B")
+    expect(result.toAccount.id).toBe("B")
+    expect(result.toAccount.label).toBe("B")
     const { loadAccount } = await import("../account")
-    const afterA = (await loadAccount(client, key, "A"))!
+    const afterA = await loadAccount(client, key, "A")
+    if (!afterA) {
+      throw new Error("expected source account")
+    }
     expect(afterA.version).toBe(2)
     expect(afterA.cookies[0].value).toBe("A-live")
   })
@@ -250,7 +258,10 @@ describe("switcher.switchAccount", () => {
 
     expect(result.pushedFrom).toBe(false)
     const { loadAccount } = await import("../account")
-    const afterA = (await loadAccount(client, key, "A"))!
+    const afterA = await loadAccount(client, key, "A")
+    if (!afterA) {
+      throw new Error("expected source account")
+    }
     expect(afterA.version).toBe(1)
   })
 
@@ -424,7 +435,10 @@ describe("switcher.overwriteWithCurrent", () => {
     await overwriteWithCurrent({ client, key, adapter, accountId: accountA.id })
 
     const { loadAccount } = await import("../account")
-    const after = (await loadAccount(client, key, accountA.id))!
+    const after = await loadAccount(client, key, accountA.id)
+    if (!after) {
+      throw new Error("expected account after overwrite")
+    }
     expect(after.version).toBe(2)
     expect(after.cookies[0].value).toBe("latest")
   })
@@ -442,7 +456,10 @@ describe("switcher.overwriteWithCurrent", () => {
     ).rejects.toThrow(/STALE|EMPTY/)
 
     const { loadAccount } = await import("../account")
-    const after = (await loadAccount(client, key, accountA.id))!
+    const after = await loadAccount(client, key, accountA.id)
+    if (!after) {
+      throw new Error("expected account after failed overwrite")
+    }
     expect(after.version).toBe(1)
   })
 })

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { getETLDPlusOne } from "./domain"
 import type { VaultStatus } from "./messages"
@@ -209,6 +210,12 @@ export function useSessionPanel() {
       const error = respError(response)
       if (error) {
         throw new Error(error)
+      }
+      if (response.ok && "kind" in response && response.kind === "switched") {
+        if (response.syncedTabCount > 0) {
+          const suffix = response.syncedTabCount > 1 ? "tabs" : "tab"
+          toast.info(`Synced ${response.syncedTabCount} other ${suffix}.`)
+        }
       }
       await refresh()
     },

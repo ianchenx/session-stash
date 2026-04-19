@@ -1,5 +1,6 @@
 import { initializeMeta, isInitialized, loadIndex, unlock } from "./lib/account"
 import { CfKvClient } from "./lib/cf-kv"
+import { getETLDPlusOne } from "./lib/domain"
 import type { UiMsg, UiResp } from "./lib/messages"
 import {
   clearCookies,
@@ -17,8 +18,7 @@ import {
   persistSessionKey,
   restoreSessionKey,
   scheduleAutoLock,
-  setLockPolicy,
-  type LockPolicy
+  setLockPolicy
 } from "./lib/session-lock"
 import {
   getActiveAccount,
@@ -35,7 +35,7 @@ import {
   switchAccount,
   type SessionAdapter
 } from "./lib/switcher"
-import type { ConflictInfo } from "./lib/types"
+import type { ConflictInfo, SessionSnapshot } from "./lib/types"
 
 let masterKey: CryptoKey | null = null
 let switchLock: Promise<unknown> | null = null
@@ -124,6 +124,41 @@ async function updateBadge(tabId: number, label: string | null): Promise<void> {
   if (label) {
     await chrome.action.setBadgeBackgroundColor({ tabId, color: "#2563eb" })
   }
+}
+
+async function findSameDomainTabs(domain: string): Promise<number[]> {
+  const tabs = await chrome.tabs.query({
+    url: [`*://*.${domain}/*`, `*://${domain}/*`]
+  })
+  const matchingTabs = tabs.filter(
+    (tab): tab is chrome.tabs.Tab & { id: number; url: string } =>
+      !tab.incognito && tab.id !== undefined && typeof tab.url === "string"
+  )
+
+  return matchingTabs
+    .filter((tab) => getETLDPlusOne(tab.url) === domain)
+    .map((tab) => tab.id)
+}
+
+async function syncOtherTabs(
+  tabIds: number[],
+  localStorage: SessionSnapshot["localStorage"],
+  label: string
+): Promise<number> {
+  if (tabIds.length === 0) {
+    return 0
+  }
+
+  await Promise.allSettled(tabIds.map((tabId) => clearLocalStorage(tabId)))
+  await Promise.allSettled(
+    tabIds.map((tabId) => injectLocalStorage(tabId, localStorage))
+  )
+  const reloadResults = await Promise.allSettled(
+    tabIds.map((tabId) => chrome.tabs.reload(tabId))
+  )
+  await Promise.allSettled(tabIds.map((tabId) => updateBadge(tabId, label)))
+
+  return reloadResults.filter((result) => result.status === "fulfilled").length
 }
 
 async function withLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -289,16 +324,22 @@ async function handle(msg: UiMsg): Promise<UiResp> {
             }
           })
           await setActiveAccount(msg.domain, msg.toId)
-          const index = await loadIndex(client, key)
-          const toLabel =
-            index.accounts.find((account) => account.id === msg.toId)?.label ??
-            "?"
+          const toLabel = result.toAccount.label
+          const otherTabIds = (await findSameDomainTabs(msg.domain)).filter(
+            (tabId) => tabId !== msg.tabId
+          )
+          const syncedTabCount = await syncOtherTabs(
+            otherTabIds,
+            result.toAccount.localStorage,
+            toLabel
+          )
           await updateBadge(msg.tabId, toLabel)
           return {
             ok: true,
             kind: "switched",
             pushedFrom: result.pushedFrom,
-            newFromVersion: result.newFromVersion
+            newFromVersion: result.newFromVersion,
+            syncedTabCount
           }
         } catch (error: unknown) {
           if (

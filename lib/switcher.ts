@@ -5,7 +5,7 @@ import {
   saveAccount,
   saveIndex
 } from "./account"
-import { CfKvClient } from "./cf-kv"
+import type { CfKvClient } from "./cf-kv"
 import { checkHealth } from "./session"
 import type {
   Account,
@@ -90,6 +90,7 @@ export type SwitchResult = {
   pushedFrom: boolean
   newFromVersion: number | null
   conflictResolution: ConflictResolution | null
+  toAccount: Account
 }
 
 export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
@@ -101,6 +102,10 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
   )
   const toEntry = index.accounts.find((account) => account.id === toAccountId)
   if (!toEntry) {
+    throw new Error(`target account ${toAccountId} not found`)
+  }
+  const toAccount = await loadAccount(client, key, toAccountId)
+  if (!toAccount) {
     throw new Error(`target account ${toAccountId} not found`)
   }
 
@@ -135,7 +140,8 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
         return {
           pushedFrom: false,
           newFromVersion: null,
-          conflictResolution
+          conflictResolution,
+          toAccount
         }
       }
 
@@ -161,7 +167,7 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
           entry.id === fromAccountId
             ? {
                 ...entry,
-                version: newFromVersion!,
+                version: updated.version,
                 updatedAt: updated.updatedAt
               }
             : entry
@@ -171,11 +177,6 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
       await saveIndex(client, key, nextIndex)
       pushedFrom = true
     }
-  }
-
-  const toAccount = await loadAccount(client, key, toAccountId)
-  if (!toAccount) {
-    throw new Error(`target account ${toAccountId} not found`)
   }
 
   const rollbackBuffer = liveSnapshot
@@ -199,7 +200,8 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
   return {
     pushedFrom,
     newFromVersion,
-    conflictResolution
+    conflictResolution,
+    toAccount
   }
 }
 
