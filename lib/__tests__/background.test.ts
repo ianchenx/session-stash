@@ -398,4 +398,285 @@ describe("background SWITCH", () => {
       text: "BO"
     })
   })
+
+  it("returns kind:'cancelled' and skips side effects when user cancels conflict", async () => {
+    const chromeApi = mockChrome()
+
+    const key = {} as CryptoKey
+    const setActiveAccount = vi.fn(async () => undefined)
+    const switchAccount = vi.fn(async () => ({
+      pushedFrom: false,
+      newFromVersion: null,
+      conflictResolution: "cancel" as const,
+      toAccount: {
+        id: "to",
+        domain: "github.com",
+        label: "Bob",
+        version: 1,
+        updatedAt: 1,
+        cookies: [],
+        localStorage: {},
+        criticalKeys: { cookies: [], localStorage: [] }
+      }
+    }))
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => "from"),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig: vi.fn(async () => cfConfig),
+      setActiveAccount,
+      setCfConfig: vi.fn(async () => undefined)
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      unlock: vi.fn(async () => key)
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount: vi.fn(async () => "new-id"),
+      switchAccount
+    }))
+    vi.doMock("../session", () => ({
+      checkHealth: vi.fn(),
+      clearCookies: vi.fn(async () => undefined),
+      clearLocalStorage: vi.fn(async () => undefined),
+      injectCookies: vi.fn(async () => undefined),
+      injectLocalStorage: vi.fn(async () => undefined),
+      snapshotCookies: vi.fn(async () => []),
+      snapshotLocalStorage: vi.fn(async () => ({}))
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey: vi.fn(async () => undefined),
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    const response = await sendMessage(listener, {
+      type: "SWITCH",
+      domain: "github.com",
+      fromId: "from",
+      toId: "to",
+      tabId: 7,
+      localFromVersion: 1,
+      resolution: "cancel"
+    })
+
+    expect(response).toEqual({ ok: true, kind: "cancelled" })
+    expect(setActiveAccount).not.toHaveBeenCalled()
+    expect(chromeApi.tabsQuery).not.toHaveBeenCalled()
+    expect(chromeApi.setBadgeText).not.toHaveBeenCalled()
+  })
+})
+
+describe("background SAVE_NEW", () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  it("rejects when tab has no cookies and no localStorage", async () => {
+    const chromeApi = mockChrome()
+
+    const key = {} as CryptoKey
+    const saveAsNewAccount = vi.fn(async () => "new-id")
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => null),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig: vi.fn(async () => cfConfig),
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig: vi.fn(async () => undefined)
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      unlock: vi.fn(async () => key)
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount,
+      switchAccount: vi.fn()
+    }))
+    vi.doMock("../session", () => ({
+      checkHealth: vi.fn(),
+      clearCookies: vi.fn(async () => undefined),
+      clearLocalStorage: vi.fn(async () => undefined),
+      injectCookies: vi.fn(async () => undefined),
+      injectLocalStorage: vi.fn(async () => undefined),
+      snapshotCookies: vi.fn(async () => []),
+      snapshotLocalStorage: vi.fn(async () => ({}))
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey: vi.fn(async () => undefined),
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    const response = await sendMessage(listener, {
+      type: "SAVE_NEW",
+      domain: "github.com",
+      label: "Alice",
+      tabId: 7
+    })
+
+    expect(response).toMatchObject({ ok: false })
+    expect((response as { error: string }).error).toMatch(/Nothing to save/)
+    expect(saveAsNewAccount).not.toHaveBeenCalled()
+  })
+})
+
+describe("background SET_CF_CONFIG", () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  it("locks the vault when accountId or namespaceId changes", async () => {
+    const chromeApi = mockChrome()
+
+    let currentCfg = { ...cfConfig }
+    const getCfConfig = vi.fn(async () => currentCfg)
+    const setCfConfig = vi.fn(async (c: typeof cfConfig) => {
+      currentCfg = c
+    })
+    const clearSessionKey = vi.fn(async () => undefined)
+    const key = {} as CryptoKey
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => null),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig,
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      unlock: vi.fn(async () => key)
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount: vi.fn(async () => "new-id"),
+      switchAccount: vi.fn()
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey,
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    const before = (await sendMessage(listener, {
+      type: "STATUS"
+    })) as { unlocked: boolean }
+    expect(before.unlocked).toBe(true)
+
+    const response = await sendMessage(listener, {
+      type: "SET_CF_CONFIG",
+      cfg: { accountId: "acc", namespaceId: "ns-new", apiToken: "token" }
+    })
+    expect(response).toEqual({ ok: true })
+    expect(setCfConfig).toHaveBeenCalled()
+    expect(clearSessionKey).toHaveBeenCalled()
+
+    const after = (await sendMessage(listener, {
+      type: "STATUS"
+    })) as { unlocked: boolean }
+    expect(after.unlocked).toBe(false)
+  })
+
+  it("keeps vault unlocked when only apiToken changes", async () => {
+    const chromeApi = mockChrome()
+
+    let currentCfg = { ...cfConfig }
+    const getCfConfig = vi.fn(async () => currentCfg)
+    const setCfConfig = vi.fn(async (c: typeof cfConfig) => {
+      currentCfg = c
+    })
+    const clearSessionKey = vi.fn(async () => undefined)
+    const key = {} as CryptoKey
+
+    vi.doMock("../store", () => ({
+      getActiveAccount: vi.fn(async () => null),
+      getAllActiveAccounts: vi.fn(async () => ({})),
+      getCfConfig,
+      setActiveAccount: vi.fn(async () => undefined),
+      setCfConfig
+    }))
+    vi.doMock("../account", () => ({
+      initializeMeta: vi.fn(async () => key),
+      isInitialized: vi.fn(async () => true),
+      loadIndex: vi.fn(async () => ({ accounts: [], updatedAt: 1 })),
+      unlock: vi.fn(async () => key)
+    }))
+    vi.doMock("../switcher", () => ({
+      deleteAccountFlow: vi.fn(async () => undefined),
+      overwriteWithCurrent: vi.fn(async () => undefined),
+      renameAccount: vi.fn(async () => undefined),
+      saveAsNewAccount: vi.fn(async () => "new-id"),
+      switchAccount: vi.fn()
+    }))
+    vi.doMock("../session-lock", () => ({
+      cancelAutoLock: vi.fn(async () => undefined),
+      clearSessionKey,
+      getLockPolicy: vi.fn(async () => ({ kind: "timeout", minutes: 15 })),
+      isLockAlarm: vi.fn(() => false),
+      persistSessionKey: vi.fn(async () => undefined),
+      restoreSessionKey: vi.fn(async () => null),
+      scheduleAutoLock: vi.fn(async () => undefined),
+      setLockPolicy: vi.fn(async () => undefined)
+    }))
+
+    await import("../../background")
+    const listener = chromeApi.getListener()
+
+    await sendMessage(listener, { type: "INIT_META", password: "pw" })
+    const response = await sendMessage(listener, {
+      type: "SET_CF_CONFIG",
+      cfg: { accountId: "acc", namespaceId: "ns", apiToken: "token-rotated" }
+    })
+    expect(response).toEqual({ ok: true })
+    expect(clearSessionKey).not.toHaveBeenCalled()
+
+    const after = (await sendMessage(listener, {
+      type: "STATUS"
+    })) as { unlocked: boolean }
+    expect(after.unlocked).toBe(true)
+  })
 })

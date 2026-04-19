@@ -74,6 +74,49 @@ describe("switcher.saveAsNewAccount", () => {
     expect(account.version).toBe(1)
   })
 
+  it("rolls back the blob when index write fails", async () => {
+    const snapshot: SessionSnapshot = {
+      cookies: [
+        {
+          name: "auth",
+          value: "x",
+          domain: ".twitter.com",
+          path: "/",
+          secure: true,
+          httpOnly: true,
+          sameSite: "lax"
+        }
+      ],
+      localStorage: { uid: "42" }
+    }
+
+    const originalPut = client.put.bind(client)
+    ;(client as unknown as { put: CfKvClient["put"] }).put = async (
+      k,
+      v
+    ) => {
+      if (k === "index") {
+        throw new Error("index put failed")
+      }
+      return originalPut(k, v)
+    }
+
+    await expect(
+      saveAsNewAccount({
+        client,
+        key,
+        domain: "twitter.com",
+        label: "Personal",
+        snapshot
+      })
+    ).rejects.toThrow(/index put failed/)
+
+    const orphanBlobs = Array.from(client.store.keys()).filter((k) =>
+      k.startsWith("account:")
+    )
+    expect(orphanBlobs).toEqual([])
+  })
+
   it("rejects duplicate label within same domain", async () => {
     const snapshot: SessionSnapshot = {
       cookies: [

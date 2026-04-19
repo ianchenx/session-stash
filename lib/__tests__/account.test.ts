@@ -60,6 +60,51 @@ describe("account.meta", () => {
       /already initialized/
     )
   })
+
+  it("unlock rejects a meta with a newer schemaVersion", async () => {
+    const meta = {
+      schemaVersion: 999,
+      salt: "AAAA",
+      verifier: "BBBB"
+    }
+    client.store.set(
+      "meta",
+      new TextEncoder().encode(JSON.stringify(meta))
+    )
+    await expect(unlock(client, "pw")).rejects.toThrow(
+      /newer than this extension supports/
+    )
+  })
+
+  it("unlock rejects a meta with an older schemaVersion", async () => {
+    const meta = {
+      schemaVersion: 0,
+      salt: "AAAA",
+      verifier: "BBBB"
+    }
+    client.store.set(
+      "meta",
+      new TextEncoder().encode(JSON.stringify(meta))
+    )
+    await expect(unlock(client, "pw")).rejects.toThrow(
+      /older than supported/
+    )
+  })
+
+  it("unlock rejects a meta whose schemaVersion is not a number", async () => {
+    const meta = {
+      schemaVersion: "one",
+      salt: "AAAA",
+      verifier: "BBBB"
+    }
+    client.store.set(
+      "meta",
+      new TextEncoder().encode(JSON.stringify(meta))
+    )
+    await expect(unlock(client, "pw")).rejects.toThrow(
+      /schemaVersion missing or invalid/
+    )
+  })
 })
 
 describe("account.index", () => {
