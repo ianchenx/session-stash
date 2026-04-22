@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react"
 import "./style.css"
 
 import { CloudflareConfigCard } from "~components/cloudflare-config-card"
+import { GithubIcon } from "~components/github-icon"
 import { LockPolicyCard } from "~components/lock-policy-card"
 import { MasterPasswordCard } from "~components/master-password-card"
 import { ThemeCard } from "~components/theme-card"
@@ -69,8 +70,16 @@ function Options() {
           </div>
         )}
 
-        <footer className="mt-6 text-center text-[11px] text-muted-foreground">
-          End-to-end encrypted · PBKDF2-SHA256 600k · AES-GCM-256
+        <footer className="mt-6 flex flex-col items-center gap-1.5 text-[11px] text-muted-foreground">
+          <p>End-to-end encrypted · PBKDF2-SHA256 600k · AES-GCM-256</p>
+          <a
+            href="https://github.com/ianchenx"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1 hover:text-foreground">
+            <GithubIcon className="h-3 w-3" />
+            ianchenx
+          </a>
         </footer>
       </div>
 

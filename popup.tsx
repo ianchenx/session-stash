@@ -12,6 +12,7 @@ import { toast } from "sonner"
 
 import "./style.css"
 
+import { GithubIcon } from "~components/github-icon"
 import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
 import { ConflictDialog } from "~components/panel/conflict-dialog"
 import { SaveNewDialog } from "~components/panel/save-new-dialog"
@@ -188,6 +189,23 @@ function Header({ panel }: { panel: ReturnType<typeof useSessionPanel> }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>Settings</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              asChild
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground">
+              <a
+                href="https://github.com/ianchenx"
+                target="_blank"
+                rel="noreferrer noopener">
+                <GithubIcon className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>GitHub · ianchenx</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     </header>
