@@ -1,7 +1,7 @@
 {
   "name": "session-stash",
   "displayName": "Session Stash",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Manage and switch multiple account sessions per site. Encrypted cookie and localStorage sync via Cloudflare KV.",
   "author": "hi@ianx.dev",
   "license": "MIT",
