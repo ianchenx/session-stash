@@ -14,7 +14,7 @@ Session Stash is a Chrome extension for managing multiple account sessions on th
 
 ### Install
 
-Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/) _(coming soon)_
+Chrome: [Session Stash](https://chromewebstore.google.com/detail/session-stash/kfbdilhallcofbmjjlhlchehkcbnailc)
 
 ### Features
 
