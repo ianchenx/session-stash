@@ -51,13 +51,14 @@ export type SaveAsNewAccountArgs = {
   key: CryptoKey
   domain: string
   label: string
+  note?: string
   snapshot: SessionSnapshot
 }
 
 export async function saveAsNewAccount(
   args: SaveAsNewAccountArgs
 ): Promise<string> {
-  const { client, key, domain, label, snapshot } = args
+  const { client, key, domain, label, note, snapshot } = args
   const index = await loadIndex(client, key)
 
   const conflict = index.accounts.find(
@@ -72,6 +73,7 @@ export async function saveAsNewAccount(
     id: crypto.randomUUID(),
     domain,
     label,
+    ...(note && { note }),
     version: 1,
     updatedAt: now,
     cookies: snapshot.cookies,
@@ -89,6 +91,7 @@ export async function saveAsNewAccount(
         id: account.id,
         domain: account.domain,
         label: account.label,
+        ...(account.note && { note: account.note }),
         version: account.version,
         updatedAt: account.updatedAt
       }
@@ -346,4 +349,39 @@ export async function renameAccount(args: RenameArgs): Promise<void> {
     updatedAt: now
   }
   await commitAccountWrite(client, key, renamed, next)
+}
+
+export type SetNoteArgs = {
+  client: CfKvClient
+  key: CryptoKey
+  accountId: string
+  note: string
+}
+
+export async function setAccountNote(args: SetNoteArgs): Promise<void> {
+  const { client, key, accountId, note } = args
+  const trimmed = note.trim()
+
+  const [account, index] = await Promise.all([
+    loadAccount(client, key, accountId),
+    loadIndex(client, key)
+  ])
+  if (!account) {
+    throw new Error(`account ${accountId} not found`)
+  }
+  const now = Date.now()
+  const updated: Account = {
+    ...account,
+    note: trimmed || undefined,
+    updatedAt: now
+  }
+  const next: Index = {
+    accounts: index.accounts.map((entry) =>
+      entry.id === accountId
+        ? { ...entry, note: trimmed || undefined, updatedAt: now }
+        : entry
+    ),
+    updatedAt: now
+  }
+  await commitAccountWrite(client, key, updated, next)
 }

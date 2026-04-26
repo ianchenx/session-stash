@@ -159,7 +159,7 @@ export function useSessionPanel() {
   }, [refresh])
 
   const saveCurrentAsNew = useCallback(
-    async (label: string) => {
+    async (label: string, note?: string) => {
       if (!tab.id || !tab.domain) {
         throw new Error("No supported domain in the active tab.")
       }
@@ -167,6 +167,7 @@ export function useSessionPanel() {
         type: "SAVE_NEW",
         domain: tab.domain,
         label: label.trim(),
+        note,
         tabId: tab.id
       })
       const error = respError(response)
@@ -254,6 +255,18 @@ export function useSessionPanel() {
     [refresh]
   )
 
+  const setNote = useCallback(
+    async (accountId: string, note: string) => {
+      const response = await send({ type: "SET_NOTE", accountId, note })
+      const error = respError(response)
+      if (error) {
+        throw new Error(error)
+      }
+      await refresh()
+    },
+    [refresh]
+  )
+
   const remove = useCallback(
     async (accountId: string) => {
       if (!tab.id) {
@@ -326,6 +339,7 @@ export function useSessionPanel() {
     saveCurrentAsNew,
     doSwitch,
     rename,
+    setNote,
     remove,
     pushCurrent,
     wipeCurrent

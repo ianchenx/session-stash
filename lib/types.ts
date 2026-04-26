@@ -28,6 +28,7 @@ export type Account = {
   id: string
   domain: string
   label: string
+  note?: string
   version: number
   updatedAt: number
   cookies: SerializedCookie[]
@@ -39,6 +40,7 @@ export type IndexEntry = {
   id: string
   domain: string
   label: string
+  note?: string
   version: number
   updatedAt: number
 }

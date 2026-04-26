@@ -39,6 +39,7 @@ import {
   overwriteWithCurrent,
   renameAccount,
   saveAsNewAccount,
+  setAccountNote,
   switchAccount,
   type SessionAdapter
 } from "./lib/switcher"
@@ -375,6 +376,7 @@ async function handle(msg: UiMsg): Promise<UiResp> {
           key,
           domain: msg.domain,
           label: msg.label,
+          note: msg.note,
           snapshot
         })
         await setActiveAccount(msg.domain, id)
@@ -507,6 +509,21 @@ async function handle(msg: UiMsg): Promise<UiResp> {
           key,
           accountId: msg.accountId,
           label: msg.label
+        })
+        return { ok: true }
+      })
+    }
+
+    case "SET_NOTE": {
+      return withLock(async () => {
+        const client = await getClient()
+        const key = requireKey()
+        await touchLockTimer()
+        await setAccountNote({
+          client,
+          key,
+          accountId: msg.accountId,
+          note: msg.note
         })
         return { ok: true }
       })

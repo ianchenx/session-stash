@@ -22,7 +22,13 @@ export type UiMsg =
   | { type: "LOCK" }
   | { type: "LIST_ALL" }
   | { type: "LIST_ACCOUNTS"; domain: string }
-  | { type: "SAVE_NEW"; domain: string; label: string; tabId: number }
+  | {
+      type: "SAVE_NEW"
+      domain: string
+      label: string
+      note?: string
+      tabId: number
+    }
   | {
       type: "SWITCH"
       domain: string
@@ -35,6 +41,7 @@ export type UiMsg =
   | { type: "OVERWRITE"; accountId: string; tabId: number }
   | { type: "DELETE"; accountId: string; tabId: number }
   | { type: "RENAME"; accountId: string; label: string }
+  | { type: "SET_NOTE"; accountId: string; note: string }
   | { type: "WIPE_CURRENT"; domain: string; tabId: number }
   | { type: "SET_LOCK_POLICY"; policy: LockPolicy }
   | { type: "GET_LOCK_POLICY" }

@@ -82,9 +82,10 @@ function SidePanel() {
       <SaveNewDialog
         open={saveOpen}
         domain={tab.domain}
+        showNote
         onClose={() => setSaveOpen(false)}
-        onSave={async (label) => {
-          await panel.saveCurrentAsNew(label)
+        onSave={async (label, note) => {
+          await panel.saveCurrentAsNew(label, note)
           toast.success(`Saved "${label}".`)
         }}
       />

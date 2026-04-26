@@ -1,5 +1,6 @@
 import {
   ArrowUpFromLine,
+  MessageSquare,
   MoreHorizontal,
   Pencil,
   RefreshCcw,
@@ -29,6 +30,7 @@ type Props = {
   onSwitch: () => void
   onPush: () => void
   onRename: () => void
+  onEditNote: () => void
   onDelete: () => void
 }
 
@@ -48,6 +50,7 @@ export function AccountRow({
   onSwitch,
   onPush,
   onRename,
+  onEditNote,
   onDelete
 }: Props) {
   const actionDisabled = busy || disabledOthers
@@ -81,6 +84,11 @@ export function AccountRow({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{account.label}</p>
+        {account.note && (
+          <p className="truncate text-xs text-muted-foreground/70">
+            {account.note}
+          </p>
+        )}
         <p className="truncate text-xs text-muted-foreground">
           {active && <span className="text-success">Active · </span>}
           {formatRelative(account.updatedAt)}
@@ -124,6 +132,10 @@ export function AccountRow({
             <DropdownMenuItem onClick={onRename}>
               <Pencil className="mr-2 h-4 w-4" />
               Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onEditNote}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {account.note ? "Edit note" : "Add note"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

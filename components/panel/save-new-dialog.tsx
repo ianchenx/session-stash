@@ -17,20 +17,29 @@ import {
   FieldLabel
 } from "~components/ui/field"
 import { Input } from "~components/ui/input"
+import { Textarea } from "~components/ui/textarea"
 import { useAsyncAction } from "~lib/use-async-action"
 
 type Props = {
   open: boolean
   domain: string | null
+  showNote?: boolean
   onClose: () => void
-  onSave: (label: string) => Promise<void>
+  onSave: (label: string, note?: string) => Promise<void>
 }
 
-export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
+export function SaveNewDialog({
+  open,
+  domain,
+  showNote,
+  onClose,
+  onSave
+}: Props) {
   const [label, setLabel] = useState("")
+  const [note, setNote] = useState("")
   const saver = useAsyncAction(
-    async (value: string) => {
-      await onSave(value)
+    async (value: string, noteValue?: string) => {
+      await onSave(value, noteValue)
     },
     { onSuccess: onClose }
   )
@@ -38,6 +47,7 @@ export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
   useEffect(() => {
     if (open) {
       setLabel("")
+      setNote("")
     }
   }, [open])
 
@@ -47,7 +57,7 @@ export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
       toast.error("Give this account a short label.")
       return
     }
-    void saver.run(trimmed)
+    void saver.run(trimmed, note.trim() || undefined)
   }
 
   return (
@@ -86,6 +96,18 @@ export function SaveNewDialog({ open, domain, onClose, onSave }: Props) {
               Labels must be unique per site and are shown everywhere.
             </FieldDescription>
           </Field>
+          {showNote && (
+            <Field>
+              <FieldLabel htmlFor="save-note">Note</FieldLabel>
+              <Textarea
+                id="save-note"
+                className="min-h-[60px] resize-none"
+                placeholder="e.g. Main work account, testing only…"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+              />
+            </Field>
+          )}
         </FieldGroup>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saver.busy}>

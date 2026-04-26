@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { AccountRow } from "~components/panel/account-row"
 import { ClearSessionDialog } from "~components/panel/clear-session-dialog"
 import { ConfirmDialog } from "~components/panel/confirm-dialog"
+import { NoteDialog } from "~components/panel/note-dialog"
 import { RenameDialog } from "~components/panel/rename-dialog"
 import { Button } from "~components/ui/button"
 import {
@@ -40,6 +41,7 @@ type Props = {
 
 export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
   const [renameTarget, setRenameTarget] = useState<IndexEntry | null>(null)
+  const [noteTarget, setNoteTarget] = useState<IndexEntry | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<IndexEntry | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
   const { pendingId, run: runWithPending } = useAccountAction()
@@ -52,6 +54,7 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
     doSwitch,
     pushCurrent,
     rename,
+    setNote,
     remove,
     wipeCurrent
   } = panel
@@ -160,6 +163,7 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
                   })
                 }
                 onRename={() => setRenameTarget(account)}
+                onEditNote={() => setNoteTarget(account)}
                 onDelete={() => setDeleteTarget(account)}
               />
             ))}
@@ -173,6 +177,15 @@ export function AccountsView({ panel, onSaveCurrent, onBack }: Props) {
         onRename={async (id, label) => {
           await rename(id, label)
           toast.success("Renamed.")
+        }}
+      />
+
+      <NoteDialog
+        target={noteTarget}
+        onClose={() => setNoteTarget(null)}
+        onSave={async (id, note) => {
+          await setNote(id, note)
+          toast.success(note ? "Note saved." : "Note removed.")
         }}
       />
 

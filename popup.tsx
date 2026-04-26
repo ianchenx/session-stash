@@ -30,7 +30,6 @@ import {
 } from "~components/ui/empty"
 import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
 import { Logo } from "~components/ui/logo"
-import { ScrollArea } from "~components/ui/scroll-area"
 import { Separator } from "~components/ui/separator"
 import { Toaster } from "~components/ui/sonner"
 import { CenteredSpinner } from "~components/ui/spinner"
@@ -80,7 +79,7 @@ function Popup() {
 
   return (
     <div
-      className="flex min-h-[420px] flex-col bg-background text-foreground"
+      className="flex min-h-[360px] flex-col bg-background text-foreground"
       style={{ width: POPUP_WIDTH }}>
       <Header panel={panel} />
 
@@ -105,8 +104,8 @@ function Popup() {
         open={saveOpen}
         domain={tab.domain}
         onClose={() => setSaveOpen(false)}
-        onSave={async (label) => {
-          await panel.saveCurrentAsNew(label)
+        onSave={async (label, note) => {
+          await panel.saveCurrentAsNew(label, note)
           toast.success(`Saved "${label}".`)
         }}
       />
@@ -359,7 +358,7 @@ function Body({
 
       <Separator />
 
-      <ScrollArea className="max-h-72 flex-1">
+      <div className="max-h-[240px] overflow-y-auto">
         {accounts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 p-6 text-center">
             <p className="text-sm text-muted-foreground">
@@ -434,7 +433,7 @@ function Body({
             })}
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       <Separator />
 
