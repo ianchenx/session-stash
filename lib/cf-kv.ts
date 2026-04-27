@@ -2,6 +2,8 @@ import type { CfConfig } from "./types"
 
 const BASE = "https://api.cloudflare.com/client/v4"
 
+const TIMEOUT_MS = 15_000
+
 export class CfKvClient {
   constructor(private readonly config: CfConfig) {}
 
@@ -16,7 +18,8 @@ export class CfKvClient {
 
   async get(key: string): Promise<Uint8Array | null> {
     const response = await fetch(this.url(key), {
-      headers: this.authHeaders()
+      headers: this.authHeaders(),
+      signal: AbortSignal.timeout(TIMEOUT_MS)
     })
 
     if (response.status === 404) {
@@ -38,7 +41,8 @@ export class CfKvClient {
         ...this.authHeaders(),
         "Content-Type": "application/octet-stream"
       },
-      body: value
+      body: value,
+      signal: AbortSignal.timeout(TIMEOUT_MS)
     })
 
     if (!response.ok) {
@@ -50,7 +54,8 @@ export class CfKvClient {
   async delete(key: string): Promise<void> {
     const response = await fetch(this.url(key), {
       method: "DELETE",
-      headers: this.authHeaders()
+      headers: this.authHeaders(),
+      signal: AbortSignal.timeout(TIMEOUT_MS)
     })
 
     if (!response.ok && response.status !== 404) {

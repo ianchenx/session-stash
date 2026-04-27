@@ -15,6 +15,7 @@ export type Tab = {
 export type PendingConflict = {
   info: ConflictInfo
   retry: (resolution: ConflictResolution) => Promise<void>
+  cancel: () => void
 }
 
 export type PanelState = ReturnType<typeof useSessionPanel>
@@ -223,6 +224,9 @@ export function useSessionPanel() {
               } catch (error) {
                 reject(error)
               }
+            },
+            cancel: () => {
+              reject(new DOMException("cancelled", "AbortError"))
             }
           })
         })
@@ -332,7 +336,10 @@ export function useSessionPanel() {
     selectedAccounts,
     activeIdForSelected,
     conflict,
-    dismissConflict: () => setConflict(null),
+    dismissConflict: () => {
+      conflict?.cancel()
+      setConflict(null)
+    },
     refresh,
     unlock,
     lock,

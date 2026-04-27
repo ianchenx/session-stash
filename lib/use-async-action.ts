@@ -23,6 +23,7 @@ export function useAsyncAction<TArgs extends unknown[]>(
       options?.onSuccess?.()
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error))
+      if (err.name === "AbortError") return
       if (options?.onError) {
         options.onError(err)
       } else {
