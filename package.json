@@ -69,7 +69,8 @@
       "activeTab",
       "alarms",
       "sidePanel",
-      "favicon"
+      "favicon",
+      "browsingData"
     ],
     "host_permissions": [
       "https://*/*",

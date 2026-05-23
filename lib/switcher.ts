@@ -223,7 +223,6 @@ export async function switchAccount(args: SwitchArgs): Promise<SwitchResult> {
       cookies: toAccount.cookies,
       localStorage: toAccount.localStorage
     })
-    await adapter.reload()
   } catch (error) {
     try {
       await adapter.clear()

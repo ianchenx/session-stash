@@ -10,8 +10,7 @@ import { CfKvClient } from "./lib/cf-kv"
 import { getETLDPlusOne } from "./lib/domain"
 import type { BroadcastMsg, UiMsg, UiResp } from "./lib/messages"
 import {
-  clearCookies,
-  clearLocalStorage,
+  clearSiteData,
   injectCookies,
   injectLocalStorage,
   snapshotCookies,
@@ -133,8 +132,11 @@ function makeAdapter(domain: string, tabId: number): SessionAdapter {
       return { cookies, localStorage }
     },
     async clear() {
-      await clearCookies(domain)
-      await clearLocalStorage(tabId)
+      const tab = await chrome.tabs.get(tabId)
+      const origin = typeof tab.url === "string" ? getOrigin(tab.url) : null
+      if (origin) {
+        await clearSiteData(origin)
+      }
     },
     async inject(snapshot) {
       await injectCookies(domain, snapshot.cookies)
@@ -204,7 +206,7 @@ async function syncOtherTabs(
     tabs.map(async (tab) => {
       try {
         if (tab.origin === sourceOrigin) {
-          await clearLocalStorage(tab.id)
+          await clearSiteData(tab.origin)
           await injectLocalStorage(tab.id, localStorage)
         }
 
@@ -386,7 +388,7 @@ async function handle(msg: UiMsg): Promise<UiResp> {
     }
 
     case "SWITCH": {
-      return withLock(async () => {
+      const response = await withLock(async () => {
         const client = await getClient()
         const key = requireKey()
         await touchLockTimer()
@@ -407,7 +409,7 @@ async function handle(msg: UiMsg): Promise<UiResp> {
             }
           })
           if (result.conflictResolution === "cancel") {
-            return { ok: true, kind: "cancelled" }
+            return { ok: true, kind: "cancelled" } as const
           }
           await setActiveAccount(msg.domain, msg.toId)
           const toLabel = result.toAccount.label
@@ -436,7 +438,7 @@ async function handle(msg: UiMsg): Promise<UiResp> {
             pushedFrom: result.pushedFrom,
             newFromVersion: result.newFromVersion,
             syncedTabCount
-          }
+          } as const
         } catch (error: unknown) {
           if (
             error &&
@@ -448,11 +450,15 @@ async function handle(msg: UiMsg): Promise<UiResp> {
               ok: true,
               kind: "conflict",
               info: (error as { conflict: ConflictInfo }).conflict
-            }
+            } as const
           }
           throw error
         }
       })
+      if (response.kind === "switched") {
+        void chrome.tabs.reload(msg.tabId)
+      }
+      return response
     }
 
     case "OVERWRITE": {
@@ -530,15 +536,15 @@ async function handle(msg: UiMsg): Promise<UiResp> {
     }
 
     case "WIPE_CURRENT": {
-      return withLock(async () => {
+      await withLock(async () => {
         await touchLockTimer()
         const adapter = makeAdapter(msg.domain, msg.tabId)
         await adapter.clear()
         await setActiveAccount(msg.domain, null)
         await updateBadge(msg.tabId, null)
-        await adapter.reload()
-        return { ok: true }
       })
+      void chrome.tabs.reload(msg.tabId)
+      return { ok: true }
     }
   }
 }

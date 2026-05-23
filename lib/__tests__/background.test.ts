@@ -194,7 +194,7 @@ describe("background SWITCH", () => {
     const getCfConfig = vi.fn(async () => cfConfig)
     const setActiveAccount = vi.fn(async () => undefined)
     const initializeMeta = vi.fn(async () => key)
-    const clearLocalStorage = vi.fn(async () => undefined)
+    const clearSiteData = vi.fn(async () => undefined)
     const injectLocalStorage = vi.fn(async () => undefined)
     const switchAccount = vi.fn(async () => ({
       pushedFrom: false,
@@ -234,8 +234,7 @@ describe("background SWITCH", () => {
     }))
     vi.doMock("../session", () => ({
       checkHealth: vi.fn(),
-      clearCookies: vi.fn(async () => undefined),
-      clearLocalStorage,
+      clearSiteData,
       injectCookies: vi.fn(async () => undefined),
       injectLocalStorage,
       snapshotCookies: vi.fn(async () => []),
@@ -274,8 +273,8 @@ describe("background SWITCH", () => {
     expect(chromeApi.tabsQuery).toHaveBeenCalledWith({
       url: ["https://*.github.com/*", "https://github.com/*"]
     })
-    expect(clearLocalStorage).toHaveBeenCalledTimes(1)
-    expect(clearLocalStorage).toHaveBeenCalledWith(9)
+    expect(clearSiteData).toHaveBeenCalledTimes(1)
+    expect(clearSiteData).toHaveBeenCalledWith("https://github.com")
     expect(injectLocalStorage).toHaveBeenCalledTimes(1)
     expect(injectLocalStorage).toHaveBeenCalledWith(9, { token: "bob" })
     expect(chromeApi.tabsReload).toHaveBeenNthCalledWith(1, 8)
@@ -308,11 +307,10 @@ describe("background SWITCH", () => {
     ])
 
     const key = {} as CryptoKey
-    const clearLocalStorage = vi.fn(async (tabId: number) => {
-      if (tabId === 8) {
-        throw new Error("cannot clear")
-      }
-    })
+    const clearSiteData = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("cannot clear"))
+      .mockResolvedValue(undefined)
     const injectLocalStorage = vi.fn(async () => undefined)
 
     vi.doMock("../store", () => ({
@@ -351,8 +349,7 @@ describe("background SWITCH", () => {
     }))
     vi.doMock("../session", () => ({
       checkHealth: vi.fn(),
-      clearCookies: vi.fn(async () => undefined),
-      clearLocalStorage,
+      clearSiteData,
       injectCookies: vi.fn(async () => undefined),
       injectLocalStorage,
       snapshotCookies: vi.fn(async () => []),
@@ -388,10 +385,11 @@ describe("background SWITCH", () => {
       newFromVersion: null,
       syncedTabCount: 1
     })
-    expect(clearLocalStorage).toHaveBeenCalledTimes(2)
+    expect(clearSiteData).toHaveBeenCalledTimes(2)
     expect(injectLocalStorage).toHaveBeenCalledTimes(1)
     expect(injectLocalStorage).toHaveBeenCalledWith(9, { token: "bob" })
-    expect(chromeApi.tabsReload).toHaveBeenCalledTimes(1)
+    expect(chromeApi.tabsReload).toHaveBeenCalledTimes(2)
+    expect(chromeApi.tabsReload).toHaveBeenCalledWith(7)
     expect(chromeApi.tabsReload).toHaveBeenCalledWith(9)
     expect(chromeApi.setBadgeText).not.toHaveBeenCalledWith({
       tabId: 8,
@@ -442,8 +440,7 @@ describe("background SWITCH", () => {
     }))
     vi.doMock("../session", () => ({
       checkHealth: vi.fn(),
-      clearCookies: vi.fn(async () => undefined),
-      clearLocalStorage: vi.fn(async () => undefined),
+      clearSiteData: vi.fn(async () => undefined),
       injectCookies: vi.fn(async () => undefined),
       injectLocalStorage: vi.fn(async () => undefined),
       snapshotCookies: vi.fn(async () => []),
@@ -515,8 +512,7 @@ describe("background SAVE_NEW", () => {
     }))
     vi.doMock("../session", () => ({
       checkHealth: vi.fn(),
-      clearCookies: vi.fn(async () => undefined),
-      clearLocalStorage: vi.fn(async () => undefined),
+      clearSiteData: vi.fn(async () => undefined),
       injectCookies: vi.fn(async () => undefined),
       injectLocalStorage: vi.fn(async () => undefined),
       snapshotCookies: vi.fn(async () => []),

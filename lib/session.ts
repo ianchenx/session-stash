@@ -22,17 +22,17 @@ export async function snapshotCookies(
   }))
 }
 
-export async function clearCookies(eTLDPlusOne: string): Promise<void> {
-  const cookies = await chrome.cookies.getAll({ domain: eTLDPlusOne })
-
-  for (const cookie of cookies) {
-    const url = buildCookieUrl(cookie.secure, cookie.domain, cookie.path)
-    await chrome.cookies.remove({
-      url,
-      name: cookie.name,
-      storeId: cookie.storeId
-    })
-  }
+export async function clearSiteData(origin: string): Promise<void> {
+  await chrome.browsingData.remove(
+    { origins: [origin] },
+    {
+      cookies: true,
+      localStorage: true,
+      indexedDB: true,
+      cacheStorage: true,
+      serviceWorkers: true
+    }
+  )
 }
 
 export async function injectCookies(
@@ -86,16 +86,6 @@ export async function snapshotLocalStorage(
   })
 
   return (result as Record<string, string>) ?? {}
-}
-
-export async function clearLocalStorage(tabId: number): Promise<void> {
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    world: "MAIN",
-    func: () => {
-      localStorage.clear()
-    }
-  })
 }
 
 export async function injectLocalStorage(

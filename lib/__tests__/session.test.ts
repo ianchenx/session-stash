@@ -1,9 +1,8 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   checkHealth,
-  clearCookies,
-  clearLocalStorage,
+  clearSiteData,
   injectCookies,
   injectLocalStorage,
   snapshotCookies,
@@ -142,31 +141,6 @@ describe("session.cookies", () => {
     expect(cookie.domain).toBe(".twitter.com")
   })
 
-  it("clearCookies removes all cookies for domain", async () => {
-    const get = mockCookies([
-      {
-        name: "a",
-        value: "1",
-        domain: ".twitter.com",
-        path: "/",
-        secure: true,
-        httpOnly: false,
-        sameSite: "lax"
-      },
-      {
-        name: "c",
-        value: "3",
-        domain: "other.com",
-        path: "/",
-        secure: false,
-        httpOnly: false,
-        sameSite: "unspecified"
-      }
-    ])
-    await clearCookies("twitter.com")
-    expect(get().map((cookie) => cookie.name)).toEqual(["c"])
-  })
-
   it("injectCookies sets cookies including expirationDate omission for session cookies", async () => {
     const get = mockCookies()
     const input: SerializedCookie[] = [
@@ -225,19 +199,35 @@ function mockScripting(behavior: (script: Script) => unknown) {
   return calls
 }
 
+describe("session.clearSiteData", () => {
+  it("calls chrome.browsingData.remove with the given origin and correct data types", async () => {
+    const remove = vi.fn(async () => undefined)
+    ;(globalThis as typeof globalThis & { chrome: typeof chrome }).chrome = {
+      ...chrome,
+      browsingData: { remove } as unknown as typeof chrome.browsingData
+    } as typeof chrome
+
+    await clearSiteData("https://twitter.com")
+
+    expect(remove).toHaveBeenCalledOnce()
+    expect(remove).toHaveBeenCalledWith(
+      { origins: ["https://twitter.com"] },
+      {
+        cookies: true,
+        localStorage: true,
+        indexedDB: true,
+        cacheStorage: true,
+        serviceWorkers: true
+      }
+    )
+  })
+})
+
 describe("session.localStorage", () => {
   it("snapshotLocalStorage returns { key: value } dict", async () => {
     mockScripting(() => ({ foo: "bar", n: "42" }))
     const out = await snapshotLocalStorage(123)
     expect(out).toEqual({ foo: "bar", n: "42" })
-  })
-
-  it("clearLocalStorage invokes MAIN world script", async () => {
-    const calls = mockScripting(() => undefined)
-    await clearLocalStorage(456)
-    expect(calls).toHaveLength(1)
-    expect(calls[0].target.tabId).toBe(456)
-    expect(calls[0].world).toBe("MAIN")
   })
 
   it("injectLocalStorage passes entries via args", async () => {

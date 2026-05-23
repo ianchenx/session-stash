@@ -232,7 +232,7 @@ describe("switcher.switchAccount", () => {
     key = await initializeMeta(client, "pw")
   })
 
-  it("happy path: push A, pull B, clear, inject, reload", async () => {
+  it("happy path: push A, pull B, clear, inject", async () => {
     const accountA = await seedAccount(client, key, {
       id: "A",
       domain: "x.com",
@@ -265,7 +265,7 @@ describe("switcher.switchAccount", () => {
       localFromVersion: accountA.version
     })
 
-    expect(adapter.calls).toEqual(["snapshot", "clear", "inject", "reload"])
+    expect(adapter.calls).toEqual(["snapshot", "clear", "inject"])
     expect(adapter.live.cookies[0].value).toBe("v-B")
     expect(result.toAccount.id).toBe("B")
     expect(result.toAccount.label).toBe("B")
